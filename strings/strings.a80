@@ -53,10 +53,10 @@ cmpstre	ret
 texttonum_c
 	PUSH	AF
 	PUSH	BC
-	LD	C,A
-	XOR	A
 	LD	BC,1
 	LD	(tmpmul),BC
+	LD	C,A
+	XOR	A
 	LD	(tmpptr),HL
 	LD	(tmpdig),A	;//reset temporary
 	LD 	(tmpres),A
