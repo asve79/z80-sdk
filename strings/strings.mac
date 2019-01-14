@@ -7,7 +7,7 @@
 	POP	BC
 	ENDM
 
-;zill zero string
+;fill zero string
 	MACRO	_fillzero addr, len
 	PUSH 	AF
 	PUSH 	HL

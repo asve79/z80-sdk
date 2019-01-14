@@ -13,7 +13,7 @@ fz_loop	LD	A,(HL)
 fz_end	LD	A,C
 	RET
 
-;zill zero string
+;fill zero string
 fillzero
 	LD	(HL),0
 	INC	HL
@@ -44,6 +44,24 @@ cmpstr1 INC	DE
 cmpstrn XOR	A
 cmpstre	ret
 
+;IN:
+; HL- string address
+; A - length num string
+;OUT:
+; DE - number
+; A - status. 0-ok
+texttonum_c
+	PUSH	AF
+	PUSH	BC
+	LD	C,A
+	XOR	A
+	LD	BC,1
+	LD	(tmpmul),BC
+	LD	(tmpptr),HL
+	LD	(tmpdig),A	;//reset temporary
+	LD 	(tmpres),A
+	LD 	(tmpres+1),A
+	JP	ttn3
 ;IN:
 ; HL- string address
 ;OUT:
