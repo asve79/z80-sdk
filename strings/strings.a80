@@ -55,13 +55,16 @@ texttonum_c
 	PUSH	BC
 	LD	BC,1
 	LD	(tmpmul),BC
-	LD	C,A
-	XOR	A
-	LD	(tmpptr),HL
 	LD	(tmpdig),A	;//reset temporary
+	LD	B,A
+ttnmc	INC	HL
+	DJNZ	ttnmc
+	DEC	HL
+	LD	(tmpptr),HL
+	XOR	A
 	LD 	(tmpres),A
 	LD 	(tmpres+1),A
-	JP	ttn3
+	JP	ttn4
 ;IN:
 ; HL- string address
 ;OUT:
