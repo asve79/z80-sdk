@@ -44,6 +44,7 @@ cmpstr1 INC	DE
 cmpstrn XOR	A
 cmpstre	ret
 
+;Convert number from text format to decimal. (get only A text symbols)
 ;IN:
 ; HL- string address
 ; A - length num string
@@ -65,6 +66,44 @@ ttnmc	INC	HL
 	LD 	(tmpres),A
 	LD 	(tmpres+1),A
 	JP	ttn4
+
+;Convert number from text format to decimal. (get numbers while not number character is found)
+;IN:
+; HL- string address
+;OUT:
+; DE - number
+; A - status. 0-ok
+texttonum_n
+	PUSH	AF
+	PUSH	BC
+	XOR	A
+	LD	BC,1
+	LD	(tmpmul),BC
+	LD	(tmpptr),HL
+	LD	(tmpdig),A	;//reset temporary
+	LD 	(tmpres),A
+	LD 	(tmpres+1),A
+	LD	C,0
+ttn1n	LD	A,(HL)		;//go to end line
+	OR	A
+	JZ	ttn3n
+	CP	'0'
+	JP	C,ttn3n		;//if code < '0' it is not number
+	INC	HL
+	INC	C
+	CP	'9'+1		
+	JP	C,ttn1n		;//if code < '9'+1 it is number
+	DEC	HL
+	DEC	C
+ttn3n	DEC	HL
+	LD	(tmpptr),HL
+	LD	A,C
+	LD	(tmpdig),A
+	XOR	A
+	LD	(tmpres),A
+	JP	ttn4
+
+;Convert number from text format to decimal. (string contain only number characters witch zero as EOL)
 ;IN:
 ; HL- string address
 ;OUT:
@@ -122,5 +161,30 @@ tmpmul	DW	0
 tmpptr	DW	0
 tmpdig  DB	0
 tmpres	DW	0
+
+;PTR To Next Vol - set pointer to next number volume
+;IN:
+; HL - current pointer to text. Like "103, hello 11 num",0
+;OUT:
+; HL - point to next numberic volume. Like "11 num",0
+ptrtonextvol
+	LD	A,(HL)		;//skip numbers if exists
+	OR	A
+	RET	Z
+	CP	'0'
+	JP	C,pttnv1	;// if code < '0', it is character => got to fin number section
+	INC	HL
+	CP	'9'+1		
+	JP	C,ptrtonextvol	;// if code <= '9'+1, it is number => skip it
+	DEC	HL
+pttnv1	INC	HL		;//new find number
+	LD	A,(HL)
+	OR	A		;//if zero code => return
+	RET	Z		
+	CP	'0'
+	JR	C,pttnv1	;// if code < '0', it is character
+	CP	'9'+1
+	RET	C		;// if code <= '9'+1, it is number => return
+	JR	pttnv1
 
 	ENDMODULE
