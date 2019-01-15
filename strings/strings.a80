@@ -187,4 +187,25 @@ pttnv1	INC	HL		;//new find number
 	RET	C		;// if code <= '9'+1, it is number => return
 	JR	pttnv1
 
+;Pointer to next line - set pointer to next line (CR/LF or \0 code as EOL)
+;IN:
+; HL - current pointer
+;OUT:
+; HL - point to 1st character of new line or \0 
+ptrtonextline
+	LD	A,(HL)		;//skip numbers if exists
+	OR	A
+	RET	Z
+	CP	13
+	JZ	pttnle
+	INC	HL
+	JR	ptrtonextline
+pttnle  INC	HL
+	LD	A,(HL)
+	CP	10		
+	RET	NZ
+	INC	HL		;//skip chr(10) after chr(13)
+	RET
+
 	ENDMODULE
+
