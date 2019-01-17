@@ -3,27 +3,41 @@
 	include	"z80-sdk/math/math.a80"
 
 ;find end string. return HL to position with 0
+;IN:
+; HL - bufer
+;OUT:
+; HL - pointer to EOL
+;  A - number of number of caracters
 findzero
+	LD	C,0
 fz_loop	LD	A,(HL)
 	OR	A
 	JR	Z,fz_end
-	inc	HL
-	inc 	C
+	INC	HL
+	INC 	C
 	JR	fz_loop
 fz_end	LD	A,C
 	RET
 
 ;fill zero string
+;IN:
+; HL - bufer
+; BC - count
 fillzero
-	LD	(HL),0
-	INC	HL
+	PUSH	DE
+	PUSH	HL
+	POP	DE
+	INC	DE
 	DEC	BC
+	LD	(HL),0
 	LD	A,B
 	OR	A
-	JP	NZ,fillzero
+	JNZ	fz0
 	LD	A,C
 	OR	A
-	JP	NZ,fillzero
+	JZ	fz1	
+fz0	LDIR
+fz1	POP	DE
 	RET
 
 ;compare string; return a as result. 1 - equal 0 - not equal
@@ -155,6 +169,7 @@ ttn4	LD	BC,(tmpmul)
 	LD	DE,(tmpres)
 	POP	BC
 	POP	AF
+	XOR	A
 	RET
 
 tmpmul	DW	0
