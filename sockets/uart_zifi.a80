@@ -1,4 +1,3 @@
-
 	module uart
 
 
@@ -186,26 +185,20 @@ rr2     ex      de,hl
 	jr	nz,rr1
 	ret
 
-;;read block fast
-;;hl=buffer addr
-;;bc=len
-;Readf	push hl:exx:pop hl
-;	ld de,high LSR+256*high RBR ;+256
-;
-;	ld c,low LSR
-;r0_	dup 16
-;	ld b,e
-;	in a,(c):and DR:jr z,$-4 ;wait
-;
-;	ld b,d:ini
-;	edup
-;	exx
-;	dup 16
-;	dec bc
-;	edup
-;	ld a,b:or c
-;	exx
-;	jp nz,r0
-;	ret
+cloar_fifo
+	LD  BC, ERS_CR
+	OUT (c),0
+	RET
+
+input_fifo_status
+	LD	BC,FCR
+	IN	A,(c)
+	RET
+
+output_fifo_status
+	LD	BC,LCR
+	IN	A,(c)
+	RET
 
 	endmodule
+
