@@ -1,0 +1,33 @@
+	MACRO	_SetBaud
+	call	uart_fizi.SetBaud
+	ENDM
+
+	MACRO	_SetLineControl
+	call 	uart_zifi.SetLineControl
+	ENDM
+
+	MACRO	_PutChar
+	call	uart_zifi.PutChar
+	ENDM
+
+	MACRO	_GetChar
+	call	uart_zifi.GetChar
+	ENDM
+
+	MACRO	_Read
+	call	uart_zifi.Read
+	ENDM
+
+	MACRO	_cloar_fifo
+	call	uart_zifi.cloar_fifo
+	ENDM
+
+	MACRO	_input_fifo_status
+	call	input_fifo_status
+	ENDM
+
+	MACRO	_output_fifo_status
+	call	output_fifo_status
+	ENDM
+
+	ENDM
