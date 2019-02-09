@@ -113,24 +113,45 @@ pc1	in a,(c):and THRE:jr z,pc1 ;wait for room
 ;get char
 ;out: a=char
 GetChar
-	ld bc,LSR
-gc1	in a,(c):and DR:jr z,gc1 ;wait for data
+	ld	bc,LSR
+gc1	in	a,(c)
+	and	DR
+	jr	z,gc1 	;wait for data
 
-	ld b,high RBR
-	in a,(c)
+	ld	b,high RBR
+	in	a,(c)
 	ret
 
+;get char
+;out: a=char
+;GetChar
+;	ld bc,ERS_SR
+;gc1	in f,(c)
+;	jr z,gc1 ;wait for data
 
+;	ld b,high ERS_DR
+;	in a,(c)
+;	ret
+
+DRStatus
+	ld	bc,LSR
+	in	a,(c)
+	and 	DR	;Z=1 if data is ready, 0 - if no data
+	ret
 
 ;write block
 ;hl=buffer addr
 ;bc=len
-Write	push hl:exx:pop hl
+Write	push hl
+	exx
+	pop hl
 	ld de,high LSR+256*high THR+256
 
 	ld c,low LSR
 w0	ld b,e
-w1	in a,(c):and THRE:jr z,w1 ;wait
+w1	in a,(c)
+	and THRE
+	jr z,w1 ;wait
 
 	ld b,d:outi
 	exx
@@ -142,16 +163,22 @@ w1	in a,(c):and THRE:jr z,w1 ;wait
 ;read block
 ;hl=buffer addr
 ;bc=len
-Read	push hl:exx:pop hl
+Read	push hl
+	exx
+	pop hl
 	ld de,high LSR+256*high RBR ;+256
 
 	ld c,low LSR
 r0	ld b,e
-r1	in a,(c):and DR:jr z,r1 ;wait
+r1	in a,(c)
+	and DR
+	jr z,r1 ;wait
 
 	ld b,d:ini
 	exx
-	dec bc:ld a,b:or c
+	dec bc
+	ld a,b
+	or c
 	exx
 	jp nz,r0
 	ret

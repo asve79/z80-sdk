@@ -7,15 +7,23 @@
 	ENDM
 
 	MACRO	_SendChar
-	call	uart_evo_rs232.zifi_send_byte
+	call	uart_evo_rs232.PutChar
 	ENDM
 
 	MACRO	_ReceveChar
-	call	uart_evo_rs232.read_fifo_char
+	call	uart_evo_rs232.GetChar
 	ENDM
 
 	MACRO	_Read
 	call	uart_evo_rs232.Read
+	ENDM
+
+	MACRO	_Write
+	call	uart_evo_rs232.Read
+	ENDM
+
+	MACRO	_HaveRXData
+	call	uart_evo_rs232.DRStatus
 	ENDM
 
 	MACRO	_init_uart
