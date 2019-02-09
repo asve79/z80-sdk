@@ -1,0 +1,23 @@
+	MACRO	_SetBaud
+	call	uart_evo_rs232.SetBaud
+	ENDM
+
+	MACRO	_SetLineControl
+	call 	uart_evo_rs232.SetLineControl
+	ENDM
+
+	MACRO	_SendChar
+	call	uart_evo_rs232.zifi_send_byte
+	ENDM
+
+	MACRO	_ReceveChar
+	call	uart_evo_rs232.read_fifo_char
+	ENDM
+
+	MACRO	_Read
+	call	uart_evo_rs232.Read
+	ENDM
+
+	MACRO	_init_uart
+ 	call	uart_evo_rs232.Init
+	ENDM
