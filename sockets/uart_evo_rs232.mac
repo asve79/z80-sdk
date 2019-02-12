@@ -26,6 +26,10 @@
 	call	uart_evo_rs232.DRStatus
 	ENDM
 
+	MACRO	_Check_RX_Owerflow
+	call	uart_evo_rs232.OEStatus
+	ENDM
+
 	MACRO	_init_uart
  	call	uart_evo_rs232.Init
 	ENDM

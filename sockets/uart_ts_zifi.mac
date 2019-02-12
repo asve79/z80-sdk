@@ -3,11 +3,11 @@
 	ENDM
 
 	MACRO	_SendChar
-	call	uart_ts_zifi.zifi_send_byte
+	call	uart_ts_zifi.send_fifo_byte
 	ENDM
 
 	MACRO	_ReceveChar
-	call	uart_ts_zifi.read_fifo_char
+	call	uart_ts_zifi.read_fifo_byte
 	ENDM
 
 	MACRO	_Read
@@ -28,7 +28,11 @@
 	ENDM
 
 	MACRO	_input_fifo_status
-	call	uart_ts_zifi.input_fifo_status
+	call	uart_ts_zifi.rx_fifo_cnt
+	ENDM
+
+	MACRO	_rx_fifo_cnt
+	call	uart_ts_zifi.rx_fifo_cnt
 	ENDM
 
 	MACRO	_output_fifo_status
