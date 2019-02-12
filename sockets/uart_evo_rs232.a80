@@ -64,36 +64,39 @@ DLH	EQU BASEREG+#100	;(RW)Divisor Latch MSB
 
 
 ;init uart
+;IN: HL=divfq (BaudRate = 115200 / divfq)
 Init
-        ld 	hl,2 		;BaudRate = 115200 / divfq;
+        ld 	hl,2 		
         call 	SetBaud
-
 	ld 	a,WLSB1+WLSB0 	;8 bit word, no parity
-	call	SetLineControl
-	RET
+;set line control register
+;a=status
+SetLineControl
+	ld	bc,LCR
+	out	(c),a
+	ret
+
 
 ;set baud rate
 ;hl=divider
 SetBaud
-	ld bc,LCR
-	in a,(c):or DLAB:out (c),a ;set DLAB=1
+	ld	bc,LCR
+	in	a,(c)
+	or	DLAB
+	out	(c),a ;set DLAB=1
 
-	ld b,high DLL
-	out (c),l ;low
-	inc b
-	out (c),h ;high
+	ld	b,high DLL
+	out	(c),l ;low
+	inc	b
+	out	(c),h ;high
 
-	ld b,high LCR
-	in a,(c):and !DLAB:out (c),a ;set DLAB=0
+	ld	b,high LCR
+	in	a,(c)
+	and	!DLAB
+	out	(c),a ;set DLAB=0
 	ret
 
 
-;set line control register
-;a=status
-SetLineControl
-	ld bc,LCR
-	out (c),a
-	ret
 
 
 ;put char
@@ -137,6 +140,12 @@ DRStatus
 	ld	bc,LSR
 	in	a,(c)
 	and 	DR	;Z=1 if data is ready, 0 - if no data
+	ret
+
+OEStatus 
+	ld	bc,LSR
+	in	a,(c)
+	and 	OE	;Z=1 owerflow, 0 - norm
 	ret
 
 ;write block

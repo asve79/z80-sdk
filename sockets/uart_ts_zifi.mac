@@ -1,0 +1,40 @@
+	MACRO	_SetLineControl
+	call 	uart_ts_zifi.SetLineControl
+	ENDM
+
+	MACRO	_SendChar
+	call	uart_ts_zifi.zifi_send_byte
+	ENDM
+
+	MACRO	_ReceveChar
+	call	uart_ts_zifi.read_fifo_char
+	ENDM
+
+	MACRO	_Read
+	call	uart_ts_zifi.Read
+	ENDM
+
+	MACRO	_clear_fifo
+	call	uart_ts_zifi.clear_output_fifo
+	call	uart_ts_zifi.clear_input_fifo
+	ENDM
+
+	MACRO	_clear_output_fifo
+	call	uart_ts_zifi.clear_output_fifo
+	ENDM
+
+	MACRO	_clear_input_fifo
+	call	uart_ts_zifi.clear_input_fifo
+	ENDM
+
+	MACRO	_input_fifo_status
+	call	uart_ts_zifi.input_fifo_status
+	ENDM
+
+	MACRO	_output_fifo_status
+	call	uart_ts_zifi.output_fifo_status
+	ENDM
+
+	MACRO	_init_zifi
+	call	uart_ts_zifi.init_zifi
+	ENDM

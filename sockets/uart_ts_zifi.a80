@@ -1,4 +1,4 @@
-	module uart_zifi
+	module uart_ts_zifi
 
 
 cmd_clear_input_fifo    equ 1
@@ -9,7 +9,6 @@ zifi_error_reg                  equ #C7EF
 zifi_data_reg                   equ #BFEF
 zifi_input_fifo_status          equ #C0EF
 zifi_output_fifo_status         equ #C1EF
-
 
 input_fifo_status
 	PUSH	BC
