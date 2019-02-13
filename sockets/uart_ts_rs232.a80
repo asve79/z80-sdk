@@ -1,0 +1,118 @@
+	module uart_ts_rs232
+
+
+
+cmd_clear_input_fifo    equ 1
+cmd_clear_output_fifo   equ 2
+
+;//full specification: https://github.com/tslabs/zx-evo/blob/master/pentevo/docs/ZiFi/zifi.md
+
+command_reg                	equ #C7EF	;Write - Command Register. Command set depends on API mode selected.
+error_reg                  	equ #C7EF	;Read - Error Register - command execution result code. Depends on command issued.
+data_reg			equ #BFEF	
+zifi_input_fifo_reg	        equ #C0EF	;#FF - overload. n - bytes in fifo
+zifi_output_fifo_reg            equ #C1EF	;#FF - output fifo is empty, 0 - output fifo is full
+rs232_input_fifo_reg	        equ #C2EF	;#FF - overload. n - bytes in fifo
+rs232_output_fifo_reg           equ #C3EF	;#FF - output fifo is empty, 0 - output fifo is full
+IMR				equ #C4EF	;Write - Interrupt Mask Register.
+ISR				equ #C4EF	;Read - Interrupt Source Register.
+ZIBTR				equ #C5EF	;Input Buffer Threshold Register. Number of bytes in input buffer which triggers the interrupt if enabled. (Default 0x80)
+ZITOR				equ #C6EF	;Input Buffer Timeout Register. Number of milliseconds after last byte arrived in input buffer when interrupt is triggered if enabled. (Default 0x01)
+
+;Data Register.
+;Receives byte from input FIFO. 
+;Input FIFO must not be empty (xIFR > 0). S
+;ends byte into output FIFO. Output FIFO must not be full (xOFR > 0). 
+;Serves both ZiFi and RS-232. To select required device read correspondent FIFO register. 
+;E.g if ZIFR was read, ZiFi data will be read from DR.
+
+
+init_rs232
+	PUSH	BC
+	PUSH	DE
+	ld      bc,command_reg
+	ld      de,#fff1
+	out     (c),e           ;Set API mode 1
+	out     (c),d           ;Get Version
+	in      a,(c)
+	cp      #ff
+	jp      z,noinit
+	ld      a,cmd_clear_input_fifo
+	out     (c),a           ;Clear RX FIFO
+	POP	DE
+	POP	BC
+	xor	A
+	RET
+noinit	LD	A,1
+	POP	DE
+	POP	BC
+	RET
+
+input_fifo_check
+        ld bc,rs232_input_fifo_reg    ; ждём прихода данных в фифо
+        ld e,0
+3       in a,(c)
+        or a                            ; 0 - input FIFO is empty,
+        ret nz
+error   ld a,2
+        out (#fe),a
+        ret
+
+
+clear_output_fifo       ld	a,cmd_clear_output_fifo
+                        call 	rs232_out_command
+check_output_fifo_status
+                        ld	bc,rs232_output_fifo_reg
+cofs                    in	a,(c)
+                        or	a		;0 - output FIFO is full
+                        jr	z,cofs          ;wait until free space 
+                        ret
+
+clear_input_fifo        ld	a,cmd_clear_input_fifo
+                        call	rs232_out_command
+                        ld	bc,rs232_input_fifo_reg
+1       		in	a,(c)
+                        or	a
+                        jr	nz,1b 		        ;0 - input FIFO is empty
+                        ret
+
+rs232_out_command       ld	bc,command_reg
+                        out	(c),a
+                        ret
+
+rs232_command_result    ld	bc,error_reg
+                        in	a,(c)
+                        ret
+
+rx_fifo_cnt	ld 	bc,rs232_input_fifo_reg	
+               	in 	a,(c)
+               	RET
+
+;OUT: 
+; A - num bytes in output fifo (FF-empty, 0 - FULL)
+tx_fifo_cnt
+		PUSH	BC
+		LD	BC,rs232_output_fifo_reg
+		IN	A,(c)
+		POP	BC
+		RET
+
+
+read_fifo_byte  ld 	bc,data_reg	;assume what we call rx_fifo_cnt before
+		in	a,(c)
+		ret
+
+send_fifo_byte  push	AF
+1		call 	tx_fifo_cnt
+		OR	A
+		JR	Z,1b
+                ;call 	clear_output_fifo
+                        
+                ld 	bc,data_reg
+                POP	AF
+                out 	(c),a
+                RET
+
+
+	endmodule
+

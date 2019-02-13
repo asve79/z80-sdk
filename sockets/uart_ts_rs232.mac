@@ -1,0 +1,44 @@
+	MACRO	_SetLineControl
+	call 	uart_ts_rs232.SetLineControl
+	ENDM
+
+	MACRO	_SendChar
+	call	uart_ts_rs232.send_fifo_byte
+	ENDM
+
+	MACRO	_ReceveChar
+	call	uart_ts_rs232.read_fifo_byte
+	ENDM
+
+	MACRO	_Read
+	call	uart_ts_rs232.Read
+	ENDM
+
+	MACRO	_clear_fifo
+	call	uart_ts_rs232.clear_output_fifo
+	call	uart_ts_rs232.clear_input_fifo
+	ENDM
+
+	MACRO	_clear_output_fifo
+	call	uart_ts_rs232.clear_output_fifo
+	ENDM
+
+	MACRO	_clear_input_fifo
+	call	uart_ts_rs232.clear_input_fifo
+	ENDM
+
+	MACRO	_input_fifo_status
+	call	uart_ts_rs232.rx_fifo_cnt
+	ENDM
+
+	MACRO	_rx_fifo_cnt
+	call	uart_ts_rs232.rx_fifo_cnt
+	ENDM
+
+	MACRO	_output_fifo_status
+	call	uart_ts_rs232.output_fifo_status
+	ENDM
+
+	MACRO	_init_rs232
+	call	uart_ts_rs232.init_rs232
+	ENDM
