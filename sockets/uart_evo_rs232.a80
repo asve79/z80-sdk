@@ -166,7 +166,7 @@ w1	in a,(c)
 	exx
 	dec bc:ld a,b:or c
 	exx
-	jp nz,w0
+	jr nz,w0
 	ret
 
 ;read block
@@ -189,29 +189,29 @@ r1	in a,(c)
 	ld a,b
 	or c
 	exx
-	jp nz,r0
+	jr nz,r0
 	ret
 
 ;read block fast
 ;hl=buffer addr
 ;bc=len
-Readf	push hl:exx:pop hl
-	ld de,high LSR+256*high RBR ;+256
+;Readf	push hl:exx:pop hl
+;	ld de,high LSR+256*high RBR ;+256
+;
+;	ld c,low LSR
+;r0_	dup 16
+;	ld b,e
+;	in a,(c):and DR:jr z,$-4 ;wait
 
-	ld c,low LSR
-r0_	dup 16
-	ld b,e
-	in a,(c):and DR:jr z,$-4 ;wait
-
-	ld b,d:ini
-	edup
-	exx
-	dup 16
-	dec bc
-	edup
-	ld a,b:or c
-	exx
-	jp nz,r0
-	ret
+;	ld b,d:ini
+;	edup
+;	exx
+;	dup 16
+;	dec bc
+;	edup
+;	ld a,b:or c
+;	exx
+;	jr nz,r0_
+;	ret
 
 	endmodule

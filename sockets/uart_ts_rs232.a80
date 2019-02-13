@@ -36,7 +36,7 @@ init_rs232
 	out     (c),d           ;Get Version
 	in      a,(c)
 	cp      #ff
-	jp      z,noinit
+	jr      z,noinit
 	ld      a,cmd_clear_input_fifo
 	out     (c),a           ;Clear RX FIFO
 	POP	DE
