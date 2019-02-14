@@ -1,0 +1,50 @@
+	module	uart_zxnext
+
+;https://www.specnext.com/the-next-on-the-network/
+;0x133b  |UART tx (esp)                   |
+;0x143b  |UART rx (esp)                   |
+;The UART on Next board (built inside the FPGA logic) can control the RX/TX lines from 2400 bps up to 115200 bps (the default speed).
+;The UART has a buffer an can receive 256 chars asynchronous, so the Next can be doing other tasks and the buffer will be filled anyway (multitasking!)
+;Note the ESP doesn’t have flow control, so after the buffer is filled you will start losing data if you not empty the buffer to make way for incoming data.
+;The ports are 0x143b = 5179 for RX and 0x133b = 4923 for TX.
+;
+;A write on RX port configures the UART speed:
+;0 = 115200 (default at reset)
+;1 = 57600
+;2 = 38400
+;3 = 31250
+;4 = 19200
+;5 = 9600
+;6 = 4800
+;7 = 2400
+
+;A read on the TX port shows the status of the FIFO buffer and the TX line
+;bit 0:  returns ‘0’ if the FIFO buffer is empty or ‘1’ if there is data to be collected.
+;bit 1 returns the TX status: ‘1’ when the TX still transmitting the last byte or ‘0’ when the TX is idle.
+;bit 2: return the FIFO buffer status: ‘1’ if the buffer is full, or ‘0’ when the buffer have space to hold another incoming byte.
+
+init
+		RET
+
+tx_fifo_clear
+                RET
+
+rx_fifo_clear
+		RET
+
+rx_fifo_cnt	
+               	RET
+
+;OUT: 
+; A - num bytes in output fifo (FF-empty, 0 - FULL)
+tx_fifo_cnt
+		RET
+
+
+read_fifo_byte  
+		RET
+
+send_fifo_byte  
+                RET
+
+	endm

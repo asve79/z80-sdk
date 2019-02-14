@@ -1,0 +1,36 @@
+	MACRO	_SendChar
+	call	uart_zxnext.send_fifo_byte
+	ENDM
+
+	MACRO	_ReceveChar
+	call	uart_zxnext.read_fifo_byte
+	ENDM
+
+	MACRO	_clear_fifo
+	call	uart_zxnext.tx_fifo_clear
+	call	uart_zxnext.rx_fifo_clear
+	ENDM
+
+	MACRO	_clear_output_fifo
+	call	uart_zxnext.tx_fifo_clear
+	ENDM
+
+	MACRO	_clear_input_fifo
+	call	uart_zxnext.rx_fifo_clear
+	ENDM
+
+	MACRO	_input_fifo_status
+	call	uart_zxnext.rx_fifo_cnt
+	ENDM
+
+	MACRO	_rx_fifo_cnt
+	call	uart_zxnext.rx_fifo_cnt
+	ENDM
+
+	MACRO	_output_fifo_status
+	call	uart_zxnext.output_fifo_status
+	ENDM
+
+	MACRO	_init_uart
+	call	uart_zxnext.init
+	ENDM
