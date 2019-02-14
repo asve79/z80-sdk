@@ -1,11 +1,6 @@
-# z80-sdk
+# UART and Socket libs
 
-## SDK contain:
-
-- lite windows system
-- simple math library
-- simple string library
-- uart library
+Modules in development. Their structure may be changed.
 
 ## Testing
 - uart_ts_rs232		;UART library for ZX Evolution TS-CONF RS232 Port

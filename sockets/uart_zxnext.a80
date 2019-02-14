@@ -2,7 +2,9 @@
 
 ;https://www.specnext.com/the-next-on-the-network/
 ;0x133b  |UART tx (esp)                   |
-;0x143b  |UART rx (esp)                   |
+;0x143b  |UART rx (esp)   
+;T — Trancieve (отправление)
+;R — Recieve (получение)                |
 ;The UART on Next board (built inside the FPGA logic) can control the RX/TX lines from 2400 bps up to 115200 bps (the default speed).
 ;The UART has a buffer an can receive 256 chars asynchronous, so the Next can be doing other tasks and the buffer will be filled anyway (multitasking!)
 ;Note the ESP doesn’t have flow control, so after the buffer is filled you will start losing data if you not empty the buffer to make way for incoming data.
@@ -20,31 +22,76 @@
 
 ;A read on the TX port shows the status of the FIFO buffer and the TX line
 ;bit 0:  returns ‘0’ if the FIFO buffer is empty or ‘1’ if there is data to be collected.
-;bit 1 returns the TX status: ‘1’ when the TX still transmitting the last byte or ‘0’ when the TX is idle.
+;bit 1; returns the TX status: ‘1’ when the TX still transmitting the last byte or ‘0’ when the TX is idle.
 ;bit 2: return the FIFO buffer status: ‘1’ if the buffer is full, or ‘0’ when the buffer have space to hold another incoming byte.
 
-init
+uart_tx			equ	#133b
+uart_rx			equ	#143b
+txstatus_fifo		equ	00000001b ;‘0’ if the FIFO buffer is empty or ‘1’ if there is data to be collected.
+txstatus_idle		equ	00000010b ;‘1’ when the TX still transmitting the last byte or ‘0’ when the TX is idle.
+txstatus_owerflow	equ	00000100b ;‘1’ if the buffer is full, or ‘0’ when the buffer have space to hold another incoming byte.
+
+;Set port speed
+;IN A=port speed
+;0 = 115200 (default at reset)
+;1 = 57600
+;2 = 38400
+;3 = 31250
+;4 = 19200
+;5 = 9600
+;6 = 4800
+;7 = 2400
+init		PUSH	BC
+		LD	BC,uart_rx
+		OUT	(C),A
+		POP	BC
 		RET
 
-tx_fifo_clear
-                RET
+tx_fifo_clear	PUSH	BC
+		LD	BC,uart_rx
+		;under counctruction
 
-rx_fifo_clear
+		POP	BC
 		RET
 
-rx_fifo_cnt	
+rx_fifo_clear	PUSH	BC
+		LD	BC,uart_rx
+		;under counctruction
+
+		POP	BC
+		RET
+
+rx_fifo_cnt	LD	BC,uart_tx
+		;under counctruction		
+		POP	BC
                	RET
 
 ;OUT: 
-; A - num bytes in output fifo (FF-empty, 0 - FULL)
-tx_fifo_cnt
+; A - staus fifo (FF-empty, 0 - FULL)
+tx_fifo_cnt	LD	BC,uart_tx
+		IN	A,(BC)
+		AND	txstatus_owerflow
+		SRL
+		SRL
+		DEC	A
+		OR	A
+		POP	BC
 		RET
 
 
-read_fifo_byte  
+;read one byte (you must manually check bufer for data before use this function)
+;OUT: a - byte
+read_fifo_byte  PUSH	BC
+		LD	BC,uart_rx
+		IN	A,(C)
+		POP	BC
 		RET
-
-send_fifo_byte  
+;send one byte
+;IN: A - byte
+send_fifo_byte  PUSH	BC
+		LD	BC,uart_tx
+		OUT	(C),A
+		POP	BC
                 RET
 
 	endm
