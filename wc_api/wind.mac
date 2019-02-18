@@ -1,0 +1,5 @@
+		MACRO	_printw wnd_descr
+		PUSH	AX
+		LD		A,1
+		JP		#6006
+		ENDM
