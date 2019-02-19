@@ -1,0 +1,19 @@
+;Функции работы с оконной системой для стандартизации
+		MODULE	wind
+;- print one symbol
+; IN: A - char
+printc
+		RET
+
+prints		
+		RET
+
+a_hex
+		RET
+
+hl_hex		
+		RET
+
+
+current_sow	DW	0	;current window
+		ENDMODULE
