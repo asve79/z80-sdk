@@ -1,4 +1,6 @@
-﻿Исходники плагинов:
+﻿Оригинал: https://raw.githubusercontent.com/tslabs/zx-evo/master/pentevo/soft/WC/source/plugins/READ_ME.TXT
+
+Исходники плагинов:
 wild_player     - полноценный плагин WildPlayer'a (поддерживает плей листы m3u/ayl)
 rom_writer      - полноценный плагин-прошиватель ПЗУ/виртПЗУ (в данный момент только 64к файлы)
 mounter         - полноценный плагин-манунтилка/дизмаунтилка vDOS дисков

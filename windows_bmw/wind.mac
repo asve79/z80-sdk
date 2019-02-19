@@ -40,5 +40,13 @@
 	CALL	wind.PRINTC
 	ENDM
 
+	MACRO	_a_hex
+	CALL	wind.A_HEX
+	ENDM
+
+	MACRO	_hl_hex
+	CALL	wind.HL_HEX
+	ENDM
+
 	ENDMODULE
 

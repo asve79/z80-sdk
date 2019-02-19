@@ -2,18 +2,98 @@
 		MODULE	wind
 ;- print one symbol
 ; IN: A - char
-printc
+printc		PUSH	IX
+		PUSH	BC
+		PUSH	DE
+		PUSH	HL
+		LD	IX,(current_sow)
+		PUSH	AF
+		LD	A,5		;5¦GADRW - ïîëó÷åíèå àäðåñà â îêíå
+		LD	E,(IX+12)	
+		LD	D,(IX+13)	
+		CALL	#6006
+		POP	AF
+		LD	(HL),A
+		LD	A,(IX+4)
+		DEC	A
+		CP	E
+		JRNZ	1f
+		INC	E
+		LD	(IX+12),E
+		JR	2f
+1		XOR	A
+		LD	(IX+12),A
+		LD	A,(IX+5)
+		DEC	A
+		CP	D
+		JRNZ	2f
+		LD	A,84	;¦SCRLWOW
+		LD	DE,(IX+4)
+		LD	BC,(IX+12)
+		LD	A,84	;84¦SCRLWOW
+		EXX
+		LD	A,#FC
+		EXX
+		CALL	#6006
+2		POP	HL
+		POP	DE
+		POP	BC
+		POP	IX
 		RET
 
-prints		
+;IN: HL - string
+;OUT: HL - EOF
+prints		PUSH	AF
+1		LD	A,(HL)
+		OR	A
+		JRZ	2f
+		CALL	printc
+		INC	HL
+		JR	1b
+2		POP	AF
 		RET
 
-a_hex
+a_hex		PUSH	HL
+		PUSH	AF
+		EXX
+		POP	AF
+		EXX
+		LD	HL,bufer
+		LD	A,10		;NORK A - to hex
+		CALL	#6006		
+		XOR	A
+		LD	(bufer+2),A
+		LD	HL,bufer
+		CALL	prints
+		POP	HL
 		RET
 
-hl_hex		
+hl_hex		PUSH	BC
+		PUSH	HL
+		POP	BC
+		LD	A,B
+		PUSH	AF
+		EXX
+		POP	AF
+		EXX
+		LD	HL,bufer
+		LD	A,10		;NORK A - to hex
+		CALL	#6006		
+		LD	A,C
+		PUSH	AF
+		EXX
+		POP	AF
+		EXX
+		LD	HL,bufer+2
+		LD	A,10		;NORK A - to hex
+		CALL	#6006		
+		XOR	A
+		LD	(bufer+4),A
+		LD	HL,bufer
+		CALL	prints
+		POP	BC
 		RET
 
-
+bufer		DS	5
 current_sow	DW	0	;current window
 		ENDMODULE
