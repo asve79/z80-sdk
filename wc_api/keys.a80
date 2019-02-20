@@ -1,0 +1,23 @@
+		module keys
+
+;42¦KBSCN
+;  ¦опрос клавиш
+;  ¦i:A' - обработчик
+;  ¦       #00 - учитывает SHIFT, CL, а так же ENG/RUS
+;  ¦             (можно вызывать только 1 раз в фрейм)
+;  ¦       #01 - всегда выдает код из TAIE1
+;  ¦             (можно вызывать несколько раз за фрейм)
+;  ¦
+;  ¦!KBSCN нужно вызывать до вызова опроса SHIFT и CTRL
+;  ¦
+;  ¦o: NZ: A - TAIE1/TAIE2/TAIR1/TAIR2 (see PS2P.ASM)
+;  ¦    Z: A=#00 - unknown key (also no chars)
+;  ¦       A=#FF - buffer end (impossibru!)
+
+get_key		LD	A,42
+		EXX
+		LD	A,1
+		EXX
+		JP	#6006
+
+		endmodule
