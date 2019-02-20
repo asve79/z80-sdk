@@ -3,6 +3,7 @@
 ;  ¦(включает основной ТХТ экран в #C000 и оставляет оный по выходу!)
 ;  ¦i:IX - адрес по которому лежит структура окна (SOW)
 ;  ¦(структура должна лежать в #8000-#BFFF, #0000-#3FFF)
+;TODO: Save background if needed
 		MACRO	_printw wnd_descr
 		PUSH	AF
 		LD	IX,wnd_descr
@@ -70,3 +71,10 @@
 		CALL	wind.hl_hex
 		ENDM
 
+;TODO: close window and restore background if needed
+;Close windows
+		MACRO	_closew
+		XOR	A
+		LD	(wind.current_sow),A
+		LD	(wind.current_sow+1),A
+		ENDM

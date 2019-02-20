@@ -9,33 +9,36 @@ printc		PUSH	IX
 		LD	IX,(wind.current_sow)
 		PUSH	AF
 		LD	A,5		;5¦GADRW - получение адреса в окне
-		LD	E,(IX+12)	
-		LD	D,(IX+13)	
+		LD	E,(IX+12)	;X позиция курсора в окне (от 1)
+		LD	D,(IX+13)	;Y нижний ограничитель
 		CALL	#6006
 		POP	AF
 		LD	(HL),A
-		LD	A,(IX+4)
+		LD	A,(IX+4)	;ширина окна (Width)
 		DEC	A
 		CP	E
-		JRNZ	1f
+		JR	Z,1f
 		INC	E
-		LD	(IX+12),E
-		JR	2f
+		LD	(IX+12),E	;X позиция курсора в окне (от 1)
+		JR	3f
 1		XOR	A
-		LD	(IX+12),A
-		LD	A,(IX+5)
+		LD	(IX+12),A	;X позиция курсора в окне (от 1)
+		LD	A,(IX+5)	;высота окна (Height)
 		DEC	A
 		CP	D
-		JRNZ	2f
-		LD	A,84	;¦SCRLWOW
-		LD	DE,(IX+4)
-		LD	BC,(IX+12)
-		LD	A,84	;84¦SCRLWOW
+		JR	Z,2f
+		INC	D
+		LD	(IX+13),D	;Y position
+		JR	3f
+2		LD	A,84		;¦SCRLWOW
+		LD	DE,#0101
+		LD	BC,(IX+4)
+		LD	A,84		;84¦SCRLWOW
 		EXX
 		LD	A,#FC
 		EXX
 		CALL	#6006
-2		POP	HL
+3		POP	HL
 		POP	DE
 		POP	BC
 		POP	IX

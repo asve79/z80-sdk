@@ -1,4 +1,4 @@
 ;TODO
         MACRO	_getkey
-	XOR	A	;DUMMY
+	CALL	keys.get_key	
 	ENDM
