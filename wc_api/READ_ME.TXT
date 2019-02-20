@@ -1,4 +1,4 @@
-﻿Оригинал: https://raw.githubusercontent.com/tslabs/zx-evo/master/pentevo/soft/WC/source/plugins/READ_ME.TXT
+Оригинал: https://raw.githubusercontent.com/tslabs/zx-evo/master/pentevo/soft/WC/source/plugins/READ_ME.TXT
 
 Исходники плагинов:
 wild_player     - полноценный плагин WildPlayer'a (поддерживает плей листы m3u/ayl)

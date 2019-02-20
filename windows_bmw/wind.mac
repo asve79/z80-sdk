@@ -1,5 +1,3 @@
-	MODULE wind_macros
-
 	MACRO	_printw descr
 	LD	HL, descr
 	CALL	wind.PRINTW
@@ -47,6 +45,4 @@
 	MACRO	_hl_hex
 	CALL	wind.HL_HEX
 	ENDM
-
-	ENDMODULE
 

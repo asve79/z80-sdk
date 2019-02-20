@@ -6,7 +6,7 @@ printc		PUSH	IX
 		PUSH	BC
 		PUSH	DE
 		PUSH	HL
-		LD	IX,(current_sow)
+		LD	IX,(wind.current_sow)
 		PUSH	AF
 		LD	A,5		;5¦GADRW - получение адреса в окне
 		LD	E,(IX+12)	
@@ -47,7 +47,7 @@ prints		PUSH	AF
 1		LD	A,(HL)
 		OR	A
 		JRZ	2f
-		CALL	printc
+		CALL	wind.printc
 		INC	HL
 		JR	1b
 2		POP	AF
@@ -58,13 +58,13 @@ a_hex		PUSH	HL
 		EXX
 		POP	AF
 		EXX
-		LD	HL,bufer
+		LD	HL,wind.bufer
 		LD	A,10		;NORK A - to hex
 		CALL	#6006		
 		XOR	A
-		LD	(bufer+2),A
-		LD	HL,bufer
-		CALL	prints
+		LD	(wind.bufer+2),A
+		LD	HL,wind.bufer
+		CALL	wind.prints
 		POP	HL
 		RET
 

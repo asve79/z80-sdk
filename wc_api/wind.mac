@@ -53,7 +53,7 @@
 		POP	AF
 		ENDM
 
-		MACRO	_printw in_str
+		MACRO	_prints in_str
 		LD	HL,in_str
 		CALL	wind.prints
 		ENDM
