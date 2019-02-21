@@ -15,9 +15,8 @@
 ;  ¦       A=#FF - buffer end (impossibru!)
 
 get_key		LD	A,42
-		EXX
+		EXA
 		LD	A,1
-		EXX
 		JP	#6006
 
 wait_key	LD	A,47

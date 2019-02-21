@@ -37,33 +37,31 @@ cur_off		PUSH	AF
 ; C=W
 ; D=Y
 ; E=X
-scroll_area_up	PUSH	AF
-		LD	IX,(wind.current_sow)
-l1		PUSH	BC
-		PUSH	DE
-		LD	B,C
-l2		PUSH	BC
-		PUSH	DE
-		LD	A,5		;5¦GADRW - получение адреса в окне
-		CALL	#6006
-		LD	A,(HL)
-		PUSH	AF
-		LD	A,5		;5¦GADRW - получение адреса в окне
-		CALL	#6006
-		POP	AF
-		LD	(HL),A		
-		POP	DE
-		INC	E		;increment X
-		POP	BC
-		DJNZ	l2
-		POP	DE		;restore X
-		INC	D		;increment Y
-		POP	BC
-		DJNZ	l1
-
-
-		POP	AF
-		RET
+;scroll_area_up	PUSH	AF
+;		LD	IX,(wind.current_sow)
+;l1		PUSH	BC
+;		PUSH	DE
+;		LD	B,C
+;l2		PUSH	BC
+;		PUSH	DE
+;		LD	A,5		;5¦GADRW - получение адреса в окне
+;		CALL	#6006
+;		LD	A,(HL)
+;		PUSH	AF
+;		LD	A,5		;5¦GADRW - получение адреса в окне
+;		CALL	#6006
+;		POP	AF
+;		LD	(HL),A		
+;		POP	DE
+;		INC	E		;increment X
+;		POP	BC
+;		DJNZ	l2
+;		POP	DE		;restore X
+;		INC	D		;increment Y
+;		POP	BC
+;		DJNZ	l1
+;		POP	AF
+;		RET
 
 ;- print one symbol
 ; IN: A - char
@@ -108,8 +106,8 @@ printc		PUSH	IX
 		DEC	B
 		DEC	B						
 		EXA
-;;		LD	A,#C1
-		LD	A,#01
+		LD	A,#C1
+;		LD	A,#01
 		EXA
 		CALL	#6006
 ;		CALL	wind.scroll_area_up
@@ -133,7 +131,7 @@ prints		PUSH	AF
 
 a_hex		PUSH	HL
 		PUSH	AF
-		EX	AF,AF'
+		EXA
 		LD	HL,wind.bufer
 		LD	A,10		;NORK A - to hex. перевод байта в HEX (текстовый формат)
 		CALL	#6006		
@@ -149,18 +147,12 @@ hl_hex		PUSH	BC
 		PUSH	HL
 		POP	BC
 		LD	A,B
-		PUSH	AF
-		EXX
-		POP	AF
-		EXX
+		EXA
 		LD	HL,bufer
 		LD	A,10		;NORK A - to hex
 		CALL	#6006		
 		LD	A,C
-		PUSH	AF
-		EXX
-		POP	AF
-		EXX
+		EXA
 		LD	HL,bufer+2
 		LD	A,10		;NORK A - to hex
 		CALL	#6006		
