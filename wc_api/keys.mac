@@ -2,3 +2,11 @@
         MACRO	_getkey
 	CALL	keys.get_key	
 	ENDM
+
+        MACRO	_waitkey
+	CALL	keys.wait_key	
+	ENDM
+
+        MACRO	_waitkeyoff
+	CALL	keys.wait_keyoff
+	ENDM

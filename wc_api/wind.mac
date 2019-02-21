@@ -5,12 +5,8 @@
 ;  ¦(структура должна лежать в #8000-#BFFF, #0000-#3FFF)
 ;TODO: Save background if needed
 		MACRO	_printw wnd_descr
-		PUSH	AF
 		LD	IX,wnd_descr
-		LD	(wind.current_sow),IX
-		LD	A,1
-		CALL	#6006
-		POP	AF
+		call	wind.printw
 		ENDM
 
 ;---------------------------------------------------------------
@@ -20,11 +16,7 @@
 ;  ¦i:IX - SOW (структура должна лежать в #8000-#BFFF, #0000-#3FFF)
 ;---------------------------------------------------------------
 		MACRO	_cur_on
-		PUSH	AF
-		LD	IX,(wind.current_sow)
-		LD	A,6
-		CALL	#6006
-		POP	AF
+		CALL	wind.cur_on
 		ENDM
 ;---------------------------------------------------------------
 ; 7¦CURSER
@@ -33,11 +25,7 @@
 ;  ¦i:IX - SOW (структура должна лежать в #8000-#BFFF, #0000-#3FFF)
 ;---------------------------------------------------------------
 		MACRO	_cur_off
-		PUSH	AF
-		LD	IX,(wind.current_sow)
-		LD	A,7
-		CALL	#6006
-		POP	AF
+		CALL	wind.cur_off
 		ENDM
 
 ;---------------------------------------------------------------
@@ -74,7 +62,5 @@
 ;TODO: close window and restore background if needed
 ;Close windows
 		MACRO	_closew
-		XOR	A
-		LD	(wind.current_sow),A
-		LD	(wind.current_sow+1),A
+		call	wind.closew
 		ENDM

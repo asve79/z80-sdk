@@ -20,4 +20,10 @@ get_key		LD	A,42
 		EXX
 		JP	#6006
 
+wait_key	LD	A,47
+		JP	#6006
+
+wait_keyoff	LD	A,46
+		JP	#6006
+
 		endmodule

@@ -1,5 +1,70 @@
 ;”г­ЄжЁЁ а Ў®вл б ®Є®­­®© бЁбвҐ¬®© ¤«п бв ­¤ авЁ§ жЁЁ
 		MODULE	wind
+
+printw		LD	(wind.current_sow),IX
+		PUSH	AF
+		LD	A,1
+		CALL	#6006
+		POP	AF
+		RET
+
+closew		PUSH	AF
+		LD	IX,(wind.current_sow)
+		LD	A,2
+		CALL	#6006		
+		XOR	A
+		LD	(wind.current_sow),A
+		LD	(wind.current_sow+1),A
+		POP	AF
+		RET
+
+cur_on		PUSH	AF
+		LD	IX,(wind.current_sow)
+		LD	A,6
+		CALL	#6006
+		POP	AF
+		RET
+
+cur_off		PUSH	AF
+		LD	IX,(wind.current_sow)
+		LD	A,7
+		CALL	#6006
+		POP	AF
+		RET
+
+;IN:
+; B=H
+; C=W
+; D=Y
+; E=X
+scroll_area_up	PUSH	AF
+		LD	IX,(wind.current_sow)
+l1		PUSH	BC
+		PUSH	DE
+		LD	B,C
+l2		PUSH	BC
+		PUSH	DE
+		LD	A,5		;5¦GADRW - получение адреса в окне
+		CALL	#6006
+		LD	A,(HL)
+		PUSH	AF
+		LD	A,5		;5¦GADRW - получение адреса в окне
+		CALL	#6006
+		POP	AF
+		LD	(HL),A		
+		POP	DE
+		INC	E		;increment X
+		POP	BC
+		DJNZ	l2
+		POP	DE		;restore X
+		INC	D		;increment Y
+		POP	BC
+		DJNZ	l1
+
+
+		POP	AF
+		RET
+
 ;- print one symbol
 ; IN: A - char
 printc		PUSH	IX
@@ -7,37 +72,47 @@ printc		PUSH	IX
 		PUSH	DE
 		PUSH	HL
 		LD	IX,(wind.current_sow)
-		PUSH	AF
-		LD	A,5		;5¦GADRW - получение адреса в окне
 		LD	E,(IX+12)	;X позиция курсора в окне (от 1)
 		LD	D,(IX+13)	;Y нижний ограничитель
+		CP	13		;CR + LF
+		JR	Z,1f
+		CP	10		;LF
+		JR	Z,4f
+		PUSH	AF
+		LD	A,5		;5¦GADRW - получение адреса в окне
 		CALL	#6006
 		POP	AF
 		LD	(HL),A
 		LD	A,(IX+4)	;ширина окна (Width)
-		DEC	A
+		SUB	2
 		CP	E
 		JR	Z,1f
 		INC	E
 		LD	(IX+12),E	;X позиция курсора в окне (от 1)
 		JR	3f
-1		XOR	A
+1		LD	A,1
 		LD	(IX+12),A	;X позиция курсора в окне (от 1)
-		LD	A,(IX+5)	;высота окна (Height)
-		DEC	A
+4		LD	A,(IX+5)	;высота окна (Height)
+		SUB	2
 		CP	D
 		JR	Z,2f
 		INC	D
 		LD	(IX+13),D	;Y position
 		JR	3f
 2		LD	A,84		;¦SCRLWOW
-		LD	DE,#0101
-		LD	BC,(IX+4)
-		LD	A,84		;84¦SCRLWOW
-		EXX
-		LD	A,#FC
-		EXX
+		LD	DE,#0101	;X,Y = 1. Не трогаем рамку
+		LD	C,(IX+4)	;ширина окна (Width)
+		LD	B,(IX+5)	;высота окна (Height)
+		DEC	C
+		DEC	C
+		DEC	B
+		DEC	B						
+		EXA
+;;		LD	A,#C1
+		LD	A,#01
+		EXA
 		CALL	#6006
+;		CALL	wind.scroll_area_up
 3		POP	HL
 		POP	DE
 		POP	BC
@@ -49,7 +124,7 @@ printc		PUSH	IX
 prints		PUSH	AF
 1		LD	A,(HL)
 		OR	A
-		JRZ	2f
+		JR	Z,2f
 		CALL	wind.printc
 		INC	HL
 		JR	1b
@@ -58,16 +133,15 @@ prints		PUSH	AF
 
 a_hex		PUSH	HL
 		PUSH	AF
-		EXX
-		POP	AF
-		EXX
+		EX	AF,AF'
 		LD	HL,wind.bufer
-		LD	A,10		;NORK A - to hex
+		LD	A,10		;NORK A - to hex. перевод байта в HEX (текстовый формат)
 		CALL	#6006		
 		XOR	A
 		LD	(wind.bufer+2),A
 		LD	HL,wind.bufer
 		CALL	wind.prints
+		POP	AF
 		POP	HL
 		RET
 
