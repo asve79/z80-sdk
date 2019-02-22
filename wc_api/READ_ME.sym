@@ -1,0 +1,17 @@
+wild_player: equ 0x00000000
+rom_writer: equ 0x00000000
+mounter: equ 0x00000000
+file_cr: equ 0x00000000
+gsplayer: equ 0x00000000
+video_pl: equ 0x00000000
+bmpview: equ 0x00000000
+ilbmview: equ 0x00000000
+multigigascreen: equ 0x00000000
+tapsna: equ 0x00000000
+txt_editor: equ 0x00000000
+PLUG01.ASM: equ 0x00000000
+PLUG02.ASM: equ 0x00000000
+PLUG03.ASM: equ 0x00000000
+A: equ 0x00000000
+Offset: equ 0x00000003
+FFFF: equ 0x00000000

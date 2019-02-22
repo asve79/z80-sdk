@@ -14,15 +14,23 @@
 ;  ¦    Z: A=#00 - unknown key (also no chars)
 ;  ¦       A=#FF - buffer end (impossibru!)
 
-get_key		LD	A,42
+get_key		LD	A,1
 		EXA
-		LD	A,1
+		LD	A,42
 		JP	#6006
 
 wait_key	LD	A,47
 		JP	#6006
 
 wait_keyoff	LD	A,46
+		JP	#6006
+
+;если возвращает NZ, то клавиша нажата.
+is_enter_key	LD	A,22	;22¦ENKE (Enter)
+		JP	#6006
+
+;если возвращает NZ, то клавиша нажата.
+is_escape_key	LD	A,23	;23¦ESC
 		JP	#6006
 
 		endmodule

@@ -10,3 +10,11 @@
         MACRO	_waitkeyoff
 	CALL	keys.wait_keyoff
 	ENDM
+
+        MACRO	_is_enter_key
+	CALL	keys.is_enter_key
+	ENDM
+
+        MACRO	_is_escape_key
+	CALL	keys.is_escape_key
+	ENDM
