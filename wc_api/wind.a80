@@ -1,6 +1,12 @@
 ;Функции работы с оконной системой для стандартизации
 		MODULE	wind
 
+init		PUSH	AF
+		LD	A,15
+		CALL	#6006
+		POP	AF
+		RET
+
 printw		LD	(wind.current_sow),IX
 		PUSH	AF
 		LD	A,1

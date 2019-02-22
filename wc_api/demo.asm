@@ -129,6 +129,8 @@ ESTAT   NOP
 
         include "wind.a80"
         include "keys.a80"
+
+	ENT
 endCode
 ;---------------------------------------
         SAVEBIN "WC_DEMO.WMF", startCode, endCode-startCode

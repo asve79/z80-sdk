@@ -36,10 +36,7 @@
 ;  ¦i:none
 ;---------------------------------------------------------------
 		MACRO	_init_txtmode
-		PUSH	AF
-		LD	A,15
-		CALL	#6006
-		POP	AF
+		CALL	wind.init
 		ENDM
 
 		MACRO	_prints in_str
