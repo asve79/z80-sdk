@@ -1,5 +1,0 @@
-keys.get_key: equ 0x00000000
-keys.wait_key: equ 0x00000008
-keys.wait_keyoff: equ 0x0000000D
-keys.is_enter_key: equ 0x00000012
-keys.is_escape_key: equ 0x00000017
