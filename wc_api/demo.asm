@@ -39,7 +39,7 @@ startCode
 ;---------------------------------------
 PLUGIN  PUSH IX
         di
-        _waitkeyoff
+;        _waitkeyoff
 ;        LD (DAHL),HL
  ;       LD (DADE),DE
 
@@ -126,8 +126,8 @@ TITLE   DB #0E," DEMO ",0
 
 ESTAT   NOP
 
-        include "../wc_api/wind.a80"
-        include "../wc_api/keys.a80"
+        include "wind.a80"
+        include "keys.a80"
 endCode
 ;---------------------------------------
         SAVEBIN "WC_DEMO.WMF", startCode, endCode-startCode
