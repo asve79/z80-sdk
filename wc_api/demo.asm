@@ -55,6 +55,7 @@ PLUGIN  PUSH IX
         ;CALL PRSRW      ;печать строки в окне
         ;LD A,%11110111
         ;CALL PRIAT
+        _waitkeyoff
 M1      LD      B,30
 1       LD      A,1
         ADD     B
