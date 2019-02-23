@@ -62,11 +62,6 @@ M1      LD      B,10
         _a_hex
         LD      A,13
         _printc
-        LD      L,3
-        LD      H,A
-        call    xy2attr
-        XOR     A
-        LD      (HL),A
         DJNZ    1b
         _prints TXT0
 
@@ -89,30 +84,6 @@ EXIT    _closew
 PRIAT   EXA             ;выставление цвета (вызывается сразу после PRSRW)
         LD A,4
         JP WLD
-;-------
-
-;input h=x l=y
-;output hl=address
-xy2attr
-        PUSH    AF
-        LD      A,#C7
-        SRL     H
-        JR      NC,1f
-        LD      A,#87
-        INC     H
-1       ADD     A,L
-        LD      L,H
-        LD      H,A
-        XOR     A
-        SRL     H
-        RRA
-        SRL     H
-        RRA
-        ADD     A,L
-        LD      L,A
-        SET     6,H
-        POP     AF
-        RET
 
 ;---------------------------------------
 PLWND   DB %01000010    ;TYPE
