@@ -82,11 +82,21 @@ printc		PUSH	IX
 		JR	Z,1f
 		CP	10		;LF
 		JR	Z,4f
-		PUSH	AF
+		CP	8		;Cursor to left
+		JR	NZ,5f
+		LD	A,E
+		OR	A
+		JR	Z,3f
+		DEC	A
+		LD	(IX+12),A
+		JR	3f
+5		PUSH	AF
 		LD	A,5		;5¦GADRW - получение адреса в окне
 		CALL	#6006
 		POP	AF
 		LD	(HL),A
+;		SET	7,L		;Аттрибут
+;		LD	(HL),#FF
 		LD	A,(IX+4)	;ширина окна (Width)
 		SUB	2
 		CP	E

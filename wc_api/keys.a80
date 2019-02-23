@@ -16,13 +16,13 @@
 
 get_key		LD	A,1
 		EXA
-		LD	A,42
+		LD	A,42	;KBSCN
 		JP	#6006
 
-wait_key	LD	A,47
+wait_key	LD	A,47	;NUSP (waiting for any key)
 		JP	#6006
 
-wait_keyoff	LD	A,46
+wait_keyoff	LD	A,46	;46¦USPO
 		JP	#6006
 
 ;если возвращает NZ, то клавиша нажата.
@@ -31,6 +31,15 @@ is_enter_key	LD	A,22	;22¦ENKE (Enter)
 
 ;если возвращает NZ, то клавиша нажата.
 is_escape_key	LD	A,23	;23¦ESC
+		JP	#6006
+
+is_backspace_key LD	A,24	;¦BSPC
+		JP	#6006
+
+is_del_key	LD	A,43	;¦DEL
+		JP	#6006
+
+is_ins_key	LD	A,44	;¦INS
 		JP	#6006
 
 		endmodule

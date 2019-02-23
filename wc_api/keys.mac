@@ -18,3 +18,15 @@
         MACRO	_is_escape_key
 	CALL	keys.is_escape_key
 	ENDM
+
+        MACRO	_is_backspace_key
+	CALL	keys.is_backspace_key
+	ENDM
+
+        MACRO	_is_del_key
+	CALL	keys.is_del_key
+	ENDM
+
+        MACRO	_is_ins_key
+	CALL	keys.is_ins_key
+	ENDM

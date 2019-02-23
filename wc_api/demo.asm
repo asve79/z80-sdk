@@ -56,41 +56,31 @@ PLUGIN  PUSH IX
         ;LD A,%11110111
         ;CALL PRIAT
         _waitkeyoff
-M1      LD      B,30
+M1      LD      B,10
 1       LD      A,1
         ADD     B
-        ;_printc
         _a_hex
         LD      A,13
         _printc
+        LD      L,3
+        LD      H,A
+        call    xy2attr
+        XOR     A
+        LD      (HL),A
         DJNZ    1b
         _prints TXT0
 
-MAIN    EI
-        HALT
-;        CALL ENKE
-;        JR NZ,M1
-        ;CALL ESC
-        ;_waitkey
-M2      _getkey
-        JR      NZ,PR
-
+MAIN    EI:HALT
         _is_enter_key
         JR      Z,2f
         LD      A,13
         JR      PR
 2       _is_escape_key
         JR      NZ, EXIT
-        JR      M2
+       _getkey
+        JR      Z,MAIN
 PR      _a_hex
-        ;_waitkeyoff
-        JR      M2
-;        _printc
-;        _waitkey
-;        JR Z,MAIN
-
-;        LD IX,PLWND
-        ;CALL RRESB ;стирание окна (восстановление информации)
+        JR      MAIN
 EXIT    _closew
         LD A,(ESTAT)
         POP IX
@@ -100,6 +90,29 @@ PRIAT   EXA             ;выставление цвета (вызывается
         LD A,4
         JP WLD
 ;-------
+
+;input h=x l=y
+;output hl=address
+xy2attr
+        PUSH    AF
+        LD      A,#C7
+        SRL     H
+        JR      NC,1f
+        LD      A,#87
+        INC     H
+1       ADD     A,L
+        LD      L,H
+        LD      H,A
+        XOR     A
+        SRL     H
+        RRA
+        SRL     H
+        RRA
+        ADD     A,L
+        LD      L,A
+        SET     6,H
+        POP     AF
+        RET
 
 ;---------------------------------------
 PLWND   DB %01000010    ;TYPE
