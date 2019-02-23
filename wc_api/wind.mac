@@ -30,6 +30,11 @@
 		;CALL	wind.cur_off
 		ENDM
 
+		MACRO	_set_attr attr
+		LD	A,attr
+		CALL	wind.set_attr
+		ENDM
+
 ;---------------------------------------------------------------
 ;15¦GEDPL
 ;  ¦восстановление паллитры, всех оффсетов и txt режима

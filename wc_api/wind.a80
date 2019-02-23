@@ -11,6 +11,8 @@ printw		LD	(wind.current_sow),IX
 		PUSH	AF
 		LD	A,1
 		CALL	#6006
+		LD	A,(IX+6)	;цвет окна
+		LD	(current_attr),A
 		POP	AF
 		RET
 
@@ -95,8 +97,9 @@ printc		PUSH	IX
 		CALL	#6006
 		POP	AF
 		LD	(HL),A
-;		SET	7,L		;Аттрибут
-;		LD	(HL),#FF
+		SET	7,L		;Аттрибут
+		LD	A,(current_attr)
+		LD	(HL),A
 		LD	A,(IX+4)	;ширина окна (Width)
 		SUB	2
 		CP	E
@@ -179,6 +182,12 @@ hl_hex		PUSH	BC
 		POP	BC
 		RET
 
+;Set attributes
+; IN: A - ATTR
+set_attr	LD	(current_attr),A
+		RET
+
+current_attr	DB	0
 bufer		DS	5
 current_sow	DW	0	;current window
 		ENDMODULE
