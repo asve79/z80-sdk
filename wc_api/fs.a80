@@ -1,0 +1,35 @@
+		MODULE	fs
+
+;48¦LOAD512
+;  ¦потоковая загрузка файла
+;  ¦i:HL - Address
+;  ¦   B - Blocks (512b)
+;  ¦o:HL - New Value
+;  ¦   A - EndOfChain (#0F)
+loadblock512	LD	A,48
+		JP	#6006
+
+;49¦SAVE512
+;  ¦потоковая запись файла
+;  ¦i:HL - Address
+;  ¦   B - Blocks (512b)
+;  ¦o:HL - New Value
+;  ¦   A - EndOfChain (#0F)
+saveblock512	LD	A,49
+		JP	#6006
+
+;72¦MKfile
+;  ¦создание файла в активном каталоге
+;  ¦i:HL - flag(1),length(4),name(1-255),#00
+;  ¦
+;  ¦o: A - Error Code
+;  ¦  NZ - Operation failed
+;  ¦   Z - File created
+;  ¦        o:ENTRY(32) [use TENTRY]
+;  ¦   
+;  ¦[после создания файла происходит позиционирование
+;  ¦[на его начало!!!  
+mkfile		LD	A,72
+		JP	#6606
+
+		ENDMODULE
