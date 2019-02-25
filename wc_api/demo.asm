@@ -16,7 +16,7 @@ startCode
         DB 1; Pages
         DB 0; Page to #8000
 ;-------
-        DB 0,1; CODE
+        DB 0,(endCode - startCode) / 512 + 1; CODE
 	DS 2*5
 ;-------
         DS 2*8	;reserved
@@ -48,14 +48,14 @@ PLUGIN  PUSH IX
         _init_txtmode
         _printw PLWND
         _prints TXT0
-;        _cur_on
+        _cur_on
         ;LD HL,TXT0
         ;LD DE,#010B
         ;LD BC,12
         ;CALL PRSRW      ;печать строки в окне
         ;LD A,%11110111
         ;CALL PRIAT
-        _waitkeyoff
+        ;_waitkeyoff
 M1      LD      B,10
 1       LD      A,1
         ADD     B

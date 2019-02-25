@@ -26,50 +26,62 @@ closew		PUSH	AF
 		POP	AF
 		RET
 
+;turn on text cursoe
 cur_on		PUSH	AF
-		LD	IX,(wind.current_sow)
-		LD	A,6
-		CALL	#6006
+		PUSH	DE
+		PUSH	HL
+		LD	A,1
+		LD	(cursor_enabled),A
+		CALL	wind.cur_prn
+		POP	HL
+		POP	DE
 		POP	AF
 		RET
 
-cur_off		PUSH	AF
-		LD	IX,(wind.current_sow)
-		LD	A,7
-		CALL	#6006
-		POP	AF
-		RET
-
+;Сервисная ф-ция.для восстановления аттрибута под курсором
 ;IN:
-; B=H
-; C=W
-; D=Y
-; E=X
-;scroll_area_up	PUSH	AF
-;		LD	IX,(wind.current_sow)
-;l1		PUSH	BC
-;		PUSH	DE
-;		LD	B,C
-;l2		PUSH	BC
-;		PUSH	DE
-;		LD	A,5		;5¦GADRW - получение адреса в окне
-;		CALL	#6006
-;		LD	A,(HL)
-;		PUSH	AF
-;		LD	A,5		;5¦GADRW - получение адреса в окне
-;		CALL	#6006
-;		POP	AF
-;		LD	(HL),A		
-;		POP	DE
-;		INC	E		;increment X
-;		POP	BC
-;		DJNZ	l2
-;		POP	DE		;restore X
-;		INC	D		;increment Y
-;		POP	BC
-;		DJNZ	l1
-;		POP	AF
-;		RET
+; IX - SOW
+; D,E - Y,X
+cur_off_tmp	PUSH	AF
+		PUSH	HL
+		LD	A,5		;5¦GADRW - получение адреса в окне
+		CALL	#6006
+		SET	7,L
+		LD	A,(cursor_lattr) ;restore color under cursor
+		LD	(HL),A
+		POP	HL
+		POP	AF
+		RET
+
+;Печать курсора
+;Портит регистры IS, DE, HL,AF
+cur_prn		LD	IX,(wind.current_sow)
+		LD	E,(IX+12)	;X позиция курсора в окне (от 1)
+		LD	D,(IX+13)	;Y нижний ограничитель
+cur_prn_a	LD	A,5		;5¦GADRW - получение адреса в окне
+		CALL	#6006
+		SET	7,L
+		LD	A,(HL)
+		LD	(cursor_lattr),A
+		XOR	#FF
+		LD	(HL),A
+		RET
+
+;turn off text cursoe
+cur_off		PUSH	AF
+		PUSH	DE
+		PUSH	HL
+
+		XOR	A
+		LD	(cursor_enabled),A
+		LD	IX,(wind.current_sow)
+		LD	E,(IX+12)	;X позиция курсора в окне (от 1)
+		LD	D,(IX+13)	;Y нижний ограничитель
+		CALL	wind.cur_off_tmp
+		POP	HL
+		POP	DE		
+		POP	AF
+		RET
 
 ;- print one symbol
 ; IN: A - char
@@ -80,6 +92,12 @@ printc		PUSH	IX
 		LD	IX,(wind.current_sow)
 		LD	E,(IX+12)	;X позиция курсора в окне (от 1)
 		LD	D,(IX+13)	;Y нижний ограничитель
+		PUSH	AF
+		LD	A,(wind.cursor_enabled)
+		OR	A
+		JR	Z,7f
+		CALL	cur_off_tmp
+7		POP	AF
 		CP	13		;CR + LF
 		JR	Z,1f
 		CP	10		;LF
@@ -130,7 +148,10 @@ printc		PUSH	IX
 		EXA
 		CALL	#6006
 ;		CALL	wind.scroll_area_up
-3		POP	HL
+3		LD	A,(wind.cursor_enabled)
+		OR	A
+		CALL	NZ,cur_prn		;Печать курсора, если он включен
+		POP	HL
 		POP	DE
 		POP	BC
 		POP	IX
@@ -187,6 +208,8 @@ hl_hex		PUSH	BC
 set_attr	LD	(current_attr),A
 		RET
 
+cursor_enabled	DB	0
+cursor_lattr	DB	0	;цыет, который был под курсором для восстановления
 current_attr	DB	0
 bufer		DS	5
 current_sow	DW	0	;current window
