@@ -1,17 +1,13 @@
-		MACRO	_saveblock512 addr blocks
-		LD 		HL,addr
-		LD 		B,blocks
+		MACRO	_saveblock512
 		CALL	fs.saveblock512
 		ENDM
 
 		MACRO	_loadblock512
-		LD 		HL,addr
-		LD 		B,blocks
 		CALL	fs.saveblock512
 		ENDM
 
 ;struct: flag(1),length(4),name(1-255),#00
 		MACRO	_mkdfile struct
-		LD 		HL,struct
+		LD 	HL,struct
 		CALL	fs.mkfile
 		ENDM
