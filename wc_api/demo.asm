@@ -65,6 +65,25 @@ M1      LD      B,10
         DJNZ    1b
         _prints TXT0
 
+        LD      A,13
+        _printc
+        _printc
+
+        LD      HL,#1020
+        _hl_hex
+        LD      A,13
+        _printc
+        LD      HL,#3040
+        PUSH    HL
+        _hl_hex
+        POP     HL
+        LD      A,13
+        _printc
+        LD      A,20
+        ADD     L
+        LD      L,A
+        _hl_hex
+
 MAIN    EI:HALT
         _is_enter_key
         JR      Z,2f

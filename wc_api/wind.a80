@@ -85,7 +85,8 @@ cur_off		PUSH	AF
 
 ;- print one symbol
 ; IN: A - char
-printc		PUSH	IX
+printc		PUSH	AF
+		PUSH	IX
 		PUSH	BC
 		PUSH	DE
 		PUSH	HL
@@ -155,6 +156,7 @@ printc		PUSH	IX
 		POP	DE
 		POP	BC
 		POP	IX
+		POP	AF
 		RET
 
 ;IN: HL - string
@@ -183,14 +185,18 @@ a_hex		PUSH	HL
 		POP	HL
 		RET
 
-hl_hex		PUSH	BC
+hl_hex		PUSH	AF
+		PUSH	BC
+		PUSH	HL
 		PUSH	HL
 		POP	BC
+		PUSH	BC
 		LD	A,B
 		EXA
 		LD	HL,bufer
 		LD	A,10		;NORK A - to hex
-		CALL	#6006		
+		CALL	#6006
+		POP	BC
 		LD	A,C
 		EXA
 		LD	HL,bufer+2
@@ -200,7 +206,9 @@ hl_hex		PUSH	BC
 		LD	(bufer+4),A
 		LD	HL,bufer
 		CALL	prints
+		POP	HL
 		POP	BC
+		POP	AF
 		RET
 
 ;Set attributes
