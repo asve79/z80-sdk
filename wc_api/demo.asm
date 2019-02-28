@@ -47,7 +47,8 @@ PLUGIN  PUSH IX
         ;CALL PRWOW      ;вывод окна на экран
         _init_txtmode
         _printw PLWND
-        _prints TXT0
+        _prints txt_prints
+
         _cur_on
         ;LD HL,TXT0
         ;LD DE,#010B
@@ -56,44 +57,43 @@ PLUGIN  PUSH IX
         ;LD A,%11110111
         ;CALL PRIAT
         ;_waitkeyoff
-M1      LD      B,10
-1       LD      A,1
-        ADD     B
+
+        _prints txt_printc
+        LD      A,13
+        _printc
+        _printc
+
+        _prints txt_hl_hex
+        LD      HL,#1021
+        _hl_hex
+        LD      A,13
+        _printc
+        _prints txt_a_hex
+        LD      A,13
         _a_hex
-        LD      A,13
-        _printc
-        DJNZ    1b
-        _prints TXT0
-
-        LD      A,13
         _printc
         _printc
 
-        LD      HL,#1020
-        _hl_hex
-        LD      A,13
-        _printc
-        LD      HL,#3040
-        PUSH    HL
-        _hl_hex
-        POP     HL
-        LD      A,13
-        _printc
-        LD      A,20
-        ADD     L
-        LD      L,A
-        _hl_hex
-
+        _prints txt_input
 MAIN    EI:HALT
         _is_enter_key
-        JR      Z,2f
-        LD      A,13
-        JR      PR
-2       _is_escape_key
+        JR      NZ,2f
+       _is_escape_key
         JR      NZ, EXIT
        _getkey
         JR      Z,MAIN
-PR      _a_hex
+        JR      PR
+2       LD      A,13
+PR      PUSH    AF
+        _printc
+        LD      A,"("
+        _printc
+        POP     AF
+        _a_hex
+        LD      A,")"
+        _printc
+        LD      A," "
+        _printc
         JR      MAIN
 EXIT    _closew
         LD A,(ESTAT)
@@ -121,7 +121,11 @@ PLWND   DB %01000010    ;TYPE
         DW 0;   +18¦   2¦адрес строки для нижнего заголовка окна (если = 0 то игнорируем)
         DW 0;   +20¦   2¦адрес строки/абзаца для вывода в окно (если = 0 то игнорируем)
         ;-------
-TXT0    DB "HELLO WORLD!HELLO WORLD!HELLO WORLD!HELLO WORLD!HELLO WORLD!HELLO WORLD!",13,0
+txt_prints      DB "Function prints: HELLO WORLD!",13,0
+txt_printc      DB "Function printc (code 13 - CR/LF)",13,0
+txt_a_hex       DB "Function a_hex:",13,0
+txt_hl_hex      DB "Function hl_hex:",13,0
+txt_input       DB "input (ESC to exit):",0
 ;---------------------------------------
 DAHL    DS 2
 DADE    DS 2
