@@ -7,7 +7,7 @@
 		ENDM
 
 ;struct: flag(1),length(4),name(1-255),#00
-		MACRO	_mkdfile struct
-		LD 	HL,struct
+		MACRO	_mkfile filestruct
+		LD 	HL,filestruct
 		CALL	fs.mkfile
 		ENDM
