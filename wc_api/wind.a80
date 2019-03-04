@@ -30,10 +30,13 @@ closew		PUSH	AF
 cur_on		PUSH	AF
 		PUSH	DE
 		PUSH	HL
-		LD	A,1
+		LD	A,(cursor_enabled)
+		OR	A
+		JRNZ	1f	;if alredy active
+		INC	A
 		LD	(cursor_enabled),A
 		CALL	wind.cur_prn
-		POP	HL
+1		POP	HL
 		POP	DE
 		POP	AF
 		RET
@@ -71,14 +74,16 @@ cur_prn_a	LD	A,5		;5¦GADRW - получение адреса в окне
 cur_off		PUSH	AF
 		PUSH	DE
 		PUSH	HL
-
+		LD	A,(cursor_enabled)
+		OR	A
+		JRZ	1f
 		XOR	A
 		LD	(cursor_enabled),A
 		LD	IX,(wind.current_sow)
 		LD	E,(IX+12)	;X позиция курсора в окне (от 1)
 		LD	D,(IX+13)	;Y нижний ограничитель
 		CALL	wind.cur_off_tmp
-		POP	HL
+1		POP	HL
 		POP	DE		
 		POP	AF
 		RET
