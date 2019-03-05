@@ -53,8 +53,45 @@ PLUGIN  PUSH IX
         _a_hex
         _printc
         _printc
+;--------------------------------------------
+        _prints filebufer
+        LD      A,13
+        _a_hex
+        _printc
+        _printc
 
-        _prints txt_mkfile
+        _fentry loadfile
+        JNZ     F1
+        _prints txt_file_notfound
+        JRZ     F2
+F1      _gfile
+        LD      B,1
+        LD      HL,filebufer
+        PUSH    HL
+        _hl_hex
+        POP     HL
+        LD      A,13
+        _printc
+        _printc
+        _loadblock512
+        PUSH    HL
+        _hl_hex
+        POP     HL
+        LD      A,13
+        _printc
+        _printc
+        _prints txt_anykey
+F11     EI:HALT                 ;wait a get
+        _is_enter_key
+        JR      Z,F11
+
+        _prints filebufer
+        LD      A,13
+        _a_hex
+        _printc
+        _printc
+;----------------------------------------------
+F2      _prints txt_mkfile
         _mkfile filestruct
         JZ      C1
         _prints txt_errmkfile
@@ -124,6 +161,8 @@ txt_input       DB 13,13,"input (ESC to exit):",0
 txt_mkfile      DB "Make test file...",13,0
 txt_errmkfile   DB "Error creating file.",13,0
 txt_writefile   DB "Write 100 bytes to file",13,0
+txt_file_notfound DB 13,"File not found",13,0
+txt_anykey      DB 13,"Print any key",13,0
 ;---------------------------------------
 DAHL    DS 2
 DADE    DS 2
@@ -140,9 +179,11 @@ filestruct
         DB      0               ;type
         DB      100,0,0,0       ;size (format: L1 H1 L2 H2)
         DB      "test_f.txt",0  ;name
+loadfile
+        DB      0,"WC_todo.txt",0
 filebufer
         DS      512,"A"         ;bufer as 512b (1 block)
-
+        DB      0
 	ENT
 endCode
 ;---------------------------------------

@@ -18,6 +18,11 @@
 		CALL	fs.loadblock512
 		ENDM
 
+;//no usable function
+		MACRO	_loadblock256
+		CALL	fs.loadblock256
+		ENDM
+
 ;72¦MKfile
 ;  ¦создание файла в активном каталоге
 ;  ¦i:HL - flag(1),length(4),name(1-255),#00
