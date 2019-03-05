@@ -1,13 +1,71 @@
+;48¦LOAD512
+;  ¦потоковая загрузка файла
+;  ¦i:HL - Address
+;  ¦   B - Blocks (512b)
+;  ¦o:HL - New Value
+;  ¦   A - EndOfChain (#0F)
 		MACRO	_saveblock512
 		CALL	fs.saveblock512
 		ENDM
 
+;49¦SAVE512
+;  ¦потоковая запись файла
+;  ¦i:HL - Address
+;  ¦   B - Blocks (512b)
+;  ¦o:HL - New Value
+;  ¦   A - EndOfChain (#0F)
 		MACRO	_loadblock512
-		CALL	fs.saveblock512
+		CALL	fs.loadblock512
 		ENDM
 
-;struct: flag(1),length(4),name(1-255),#00
+;72¦MKfile
+;  ¦создание файла в активном каталоге
+;  ¦i:HL - flag(1),length(4),name(1-255),#00
+;  ¦
+;  ¦o: A - Error Code
+;  ¦  NZ - Operation failed
+;  ¦   Z - File created
+;  ¦        o:ENTRY(32) [use TENTRY]
+;  ¦   
+;  ¦[после создания файла происходит позиционирование
+;  ¦[на его начало!!!  
 		MACRO	_mkfile filestruct
 		LD 	HL,filestruct
 		CALL	fs.mkfile
+		ENDM
+
+;59¦FENTRY
+;  ¦поиск файла/каталога в активной директории
+;  ¦(так же можно подавать путь к файлу/каталогу)
+;  ¦i:HL - flag(1),name/path(1-255/1-XXX),#00
+;  ¦flag:#00 - file
+;  ¦     #10 - dir
+;  ¦name:"name.txt","directory"...
+;  ¦
+;  ¦o: Z - entry not found
+;  ¦  NZ - [DE,HL] - file length
+;  ¦       CALL GFILE/GDIR for activating file/dir
+;  ¦
+;  ¦[вызываем GFILE или GDIR, если нужно спозиционировать
+;  ¦[на файл, либо сделать активным найденный каталог!!!
+		MACRO	_fentry filename
+		LD	HL,filename
+		CALL	fs.fentry
+		ENDM
+
+;62¦GFILE
+;  ¦выставить указатель на начало найденного файла
+;  ¦(вызывается после FENTRY!)
+		MACRO	_gfile
+		CALL	fs.gfile
+		ENDM
+
+;63¦GDIR
+;  ¦сделать найденный каталог активным
+;  ¦(вызывается после FENTRY!)
+;  ¦!!недопустимо вызывать в потоке активной панели!!
+;  ¦(можно вызывать после создания/клонирования потока
+;  ¦функцией STREAM)
+		MACRO	_gdir
+		CALL	fs.gdir
 		ENDM
