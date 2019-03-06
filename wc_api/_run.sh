@@ -1,7 +1,10 @@
 #!/bin/sh
 
 set -x
+here=`pwd`
 prog="WC_DEMO.WMF"
+labels="demo.lab"
+unreal="${HOME}/zx-speccy/unreal-ts"
 
 for i in $prog;do
  if [ ! -f $i ];then
@@ -9,6 +12,15 @@ for i in $prog;do
   exit 1
  fi
 done
+
+if [ -f  ${unreal}/${labels} ]; then
+ rm -f ${unreal}/${labels}
+fi
+
+if [ -f ${labels} ];then
+ pwd
+ cp ${labels} ${unreal}/
+fi
 
 sudo mount -t vfat ~/zx-speccy/unreal-ts/wc.img /mnt/tmp -o loop
 if [ $? -ne 0 ];then
@@ -20,4 +32,8 @@ for i in $prog; do
 done
 sudo umount /mnt/tmp
 cd ~/zx-speccy/unreal-ts
-wine "Unreal.exe"
+if [ -f ${unreal}/${labels} ];then
+ wine "Unreal.exe" "-l${labels}"
+else
+ wine "Unreal.exe"
+fi
