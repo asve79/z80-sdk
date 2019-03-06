@@ -53,8 +53,8 @@
 ;  ¦
 ;  ¦[вызываем GFILE или GDIR, если нужно спозиционировать
 ;  ¦[на файл, либо сделать активным найденный каталог!!!
-		MACRO	_fentry filename
-		LD	HL,filename
+		MACRO	_fentry fname
+		LD	HL,fname
 		CALL	fs.fentry
 		ENDM
 

@@ -128,7 +128,9 @@ PR      PUSH    AF
         _printc
         JR      MAIN
 EXIT    _closew
-        LD A,(ESTAT)
+
+        ;LD A,(ESTAT)
+        LD      A,3     ;Перечитать каталог после выхода из плагина
         POP IX
         RET
 ;---------------------------------------
