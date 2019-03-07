@@ -69,4 +69,38 @@ gdir		LD	A,63
 loadblock256	LD	A,60
 		JP	#6006
 
+;56¦ADIR
+;  ¦функции для работы с активным каталогом
+;  ¦i:A'
+;  ¦  #00 - спозиционировать на начало активного каталога (как на файл)
+;  ¦  #01 - сброс счётчиков для FindNext (вызывает GDIR, указатель становится на активном каталоге)
+adir		LD	A,56
+		JP	#6006
+
+;58¦FindNext
+;  ;¦получение очередного имени файла/каталога
+;  ;¦(сбрасывается после GDIR)
+;  ;¦i:DE - Address
+;  ;¦  A' - [7]:%1 - only short names
+;  ;¦     [6-5]:reserved
+;  ;¦       [4]:%1 - enable created time field
+;  ;¦       [3]:%1 - enable created date field
+;  ;¦       [2]:%1 - enable size field
+;  ;¦     [1-0]:%00 find next Entry
+;  ;¦           %01 find next File
+;  ;¦           %10 find next DIR
+;  ;¦           %11 reserved
+;  ;¦
+;  ;¦o: Z - End Of Dir
+;  ;¦  NZ - Buffer updated
+;  ;¦  DE - [size(4)],
+;  ;¦       [date(2)],
+;  ;¦       [time(2)],
+;  ;¦       flag(1),Entry Name(1-255),0
+;  ;¦
+;  ;¦!для активного каталога сбрасывать с помощью ADIR!
+findNext	LD	A,58
+		JP	#6006
+
+
 		ENDMODULE
