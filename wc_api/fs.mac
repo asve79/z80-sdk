@@ -34,8 +34,8 @@
 ;  ¦   
 ;  ¦[после создания файла происходит позиционирование
 ;  ¦[на его начало!!!  
-		MACRO	_mkfile filestruct
-		LD 	HL,filestruct
+		MACRO	_mkfile fstruct
+		LD 	HL,fstruct
 		CALL	fs.mkfile
 		ENDM
 
