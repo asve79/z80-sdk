@@ -221,6 +221,13 @@ hl_hex		PUSH	AF
 set_attr	LD	(current_attr),A
 		RET
 
+;print CRLF
+printcrlf	PUSH	AF
+		LD	A,13
+		CALL	wind.printc
+		POP	AF
+		RET
+
 cursor_enabled	DB	0
 cursor_lattr	DB	0	;цыет, который был под курсором для восстановления
 current_attr	DB	0
