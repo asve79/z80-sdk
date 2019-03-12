@@ -103,4 +103,15 @@ findNext	LD	A,58
 		JP	#6006
 
 
+;75¦DelFl
+;  ¦удаление файла/каталога
+;  ¦i: HL - flag(1),name(1-255),#00
+;  ¦
+;  ¦o:  A - Error Code
+;  ¦    Z - File/DIR Not Found
+;  ¦   NZ - File/DIR Deleted
+DelFl		LD	A,75
+		JP	#6006
+		
+
 		ENDMODULE

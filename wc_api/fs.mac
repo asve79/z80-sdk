@@ -109,3 +109,15 @@
 		MACRO	_findNext
 		CALL	fs.findNext
 		ENDM
+
+;75¦DelFl
+;  ¦удаление файла/каталога
+;  ¦i: HL - flag(1),name(1-255),#00
+;  ¦
+;  ¦o:  A - Error Code
+;  ¦    Z - File/DIR Not Found
+;  ¦   NZ - File/DIR Deleted
+		MACRO	_DelFl
+		CALL	fs.DelFl
+		ENDM
+		
