@@ -4,7 +4,7 @@
 ;  ¦  #FF - страница с фонтом (1го текстового экрана)
 ;  ¦        (недопустимо использовать область #E000-#FFFF!)
 ;  ¦  #FE - первый текстовый экран (в нём панели)
-		MACRO	setpage_c0 pg
+		MACRO	_setpage_c0 pg
 		LD	A,pg
 		EXA
 		CALL	mem.setpage_c0
@@ -12,7 +12,7 @@
 
 ;  ¦включение страницы на #8000 (из выделенного блока)
 ;  ¦i:A' - номер страницы (от 0)
-		MACRO	setpage_80 pg
+		MACRO	_setpage_80 pg
 		LD	A,pg
 		EXA
 		CALL	mem.setpage_80
@@ -23,7 +23,7 @@
 ;  ¦не влияет на работу FAT драйвера, НО все структуры
 ;  ¦которые будут подаваться файловым функциям, должны
 ;  ¦лежать в адресах #8000-#FFFF!
-		MACRO	setpage_00 pg
+		MACRO	_setpage_00 pg
 		LD	A,pg
 		EXA
 		CALL	mem.setpage_00
