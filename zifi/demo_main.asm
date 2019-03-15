@@ -20,7 +20,7 @@ PROG
 	_prints msg_init
 	_zifi_init
 	_prints msg_scanap
-	_zifi_list_ap
+	_zifi_list_ap input_bufer
 
 	_cur_on
 
