@@ -6,17 +6,51 @@
 
 Именование макросов: Макрос именуется названием ф-ции с префиксом _zifi
 
-
-# Функции и макросы модуля
-
 ## TO DO / In progress
 
-- init	
-- connect_ap	
-- disconnect_ap	
+- init
+- list_ap
+- connect_ap
+- disconnect_ap
 - open_tcp
 - close_tcp
 - send
 - receve
 
+# Функции и макросы модуля
 
+## init
+Инициализация Zifi
+
+Вых:
+ A=0 - OK
+ A=1 - ERROR
+
+Вызов:
+```
+	call zifi.init
+```
+	или
+```
+	_zifi_init
+```
+
+## list_ap
+Получить список доступных точек доступа
+
+Вх:
+ HL - адрес буфера
+Вых:
+ A=0 - ОК
+ A=1 - ERROR
+ HL  - указатель на буфер с выводом ESP
+
+Вызов:
+```
+	ld hl,bufer
+	call zifi.list_ap
+```
+	или
+```
+	_list_ap bufer
+```
