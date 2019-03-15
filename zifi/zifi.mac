@@ -1,32 +1,36 @@
-	MACRO	_connect_ap
+	MACRO	_zifi_connect_ap
 	CALL	zifi.connect_ap
 	ENDM
 ;------------------------------------------------------------------------------------
-	MACRO	_init	
+	MACRO	_zifi_init	
 	CALL	zifi.init
+	ENDM
+;------------------------------------------------------------------------------------
+	MACRO	_zifi_list_ap
+	CALL	zifi.list_ap
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_disconnect_ap	
+	MACRO	_zifi_disconnect_ap	
 	CALL	zifi.disconnect_ap
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_open_tcp
+	MACRO	_zifi_open_tcp
 	CALL	zifi.open_tcp
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_close_tcp
+	MACRO	_zifi_close_tcp
 	CALL	zifi.close_tcp
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_send
+	MACRO	_zifi_send
 	CALL	zifi.send
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_receve
+	MACRO	_zifi_receve
 	CALL	zifi.receve
 	ENDM

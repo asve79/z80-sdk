@@ -40,5 +40,5 @@
 	ENDM
 
 	MACRO	_init_zifi
-	call	uart_ts_zifi.init_zifi
+	call	uart_ts_zifi.init
 	ENDM

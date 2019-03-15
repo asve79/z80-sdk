@@ -26,8 +26,8 @@ ZITOR				equ #C6EF	;Input Buffer Timeout Register. Number of milliseconds after 
 ;Serves both ZiFi and RS-232. To select required device read correspondent FIFO register. 
 ;E.g if ZIFR was read, ZiFi data will be read from DR.
 
-
-init_zifi
+;o: A=0 - OK, A=1 Error
+init
 	PUSH	BC
 	PUSH	DE
 	ld      bc,#c7ef
@@ -54,7 +54,7 @@ zifi_input_fifo_check
 3       in a,(c)
         or a                            ; 0 - input FIFO is empty,
         ret nz
-error   ld a,2
+	ld a,2
         out (#fe),a
         ret
 
@@ -97,11 +97,14 @@ tx_fifo_cnt
 		POP	BC
 		RET
 
-
+;OUT:
+; A - byte
 read_fifo_byte  ld 	bc,data_reg	;assume what we call rx_fifo_cnt before
 		in	a,(c)
 		ret
 
+;IN:
+; A - byte
 send_fifo_byte  push	AF
 1		call 	tx_fifo_cnt
 		OR	A

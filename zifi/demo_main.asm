@@ -1,5 +1,6 @@
 	module main
 
+	include "../common/common.mac"
 	include "demo_main.mac"
 	include "../strings/strings.mac"
 	include "../windows_bmw/wind.mac"
@@ -15,7 +16,9 @@
 PROG	
 	_printw wnd_main
 	_prints	msg_keys
-	CALL	init
+	_zifi_init
+	_zifi_list_ap
+
 	_cur_on
 
 mloop   CALL	check_rcv
@@ -43,7 +46,7 @@ mloop   CALL	check_rcv
 	CP	13		;//enter key pressed
 	JZ	enterkeytermmode
 	CALL	puttotermbufer	;//put char to command bufer and print
-	_SendChar
+	;_SendChar
 ;	LD	A,"*"
 ;	_printc
 	JP	mloop
@@ -119,11 +122,11 @@ enterkeytermmode	;enter key pressed in terminal window
 	LD	B,A
 	LD	A,13		;/add 13 code for <CR><LF> EOL command
 	LD	(HL),A
-	_SendChar
+	;_SendChar
 	INC	HL
 	LD	A,10		;/add 10 code for <CR><LF> EOL command
 	LD	(HL),A
-	_SendChar
+	;_SendChar
 	INC	HL
 	XOR	A
 	LD	(HL),A
@@ -165,19 +168,14 @@ fillzero
 
 init	XOR	A
 	LD 	(mode),A	;set terminal mode
-	IFDEF	TS_ZIFI
-	_init_zifi
+	IFDEF	TS_ZIFISB
+	_zifi_init
 	RET	Z
 	_prints msg_nozifi
 	ENDIF
-	IFDEF	TS_RS232
-	_init_rs232
-	RET	Z
-	_prints msg_notsrs
-	ENDIF
 	IFDEF	EVO_RS232
-	LD	HL,1		;//1 - is dividder for 115200 speed
-	_init_uart
+	LD	HL,1		;//1 - is dividder for 115200 speed; * TODO учесть при написании модуля под Кондратьева
+	_zifi_init
 	ENDIF
 	RET
 
@@ -186,49 +184,31 @@ init	XOR	A
 INCCNTR LD	A,(im_cntr)
 	INC	A
 	LD	(im_cntr),A
-	;call	wind.A_HEX
 	RET
 
 //check receve info from connection
 check_rcv;
-;	LD	A,(im_cntr)
-;;	call	wind.A_HEX
-;	AND	#F0
-;	RET	Z		;skip N tick's
-;	XOR	A
-;	LD	(im_cntr),A
 	_istermmode
 	RET	NZ		;//if terminal mode, then no print error status
-	IFDEF 	TS_ZIFI
-rcv1	_input_fifo_status
-	OR	A
-	ENDIF
-	IFDEF 	TS_RS232
-rcv1	_input_fifo_status
-	OR	A
-	ENDIF
-	IFDEF	EVO_RS232
-rcv1	_Check_RX_Owerflow
-	JZ	1f
-	_prints msg_rx_owerflow
-1	_HaveRXData
-	ENDIF
-	RET	Z		;//Return if zero
-;	push	AF		;//debug
-;	CALL	wind.A_HEX
-;	POP	AF
-	_ReceveChar		;//get char
-	_printc			;//print it
-	JR	rcv1
+;	IFDEF 	TS_ZIFI
+;rcv1	_input_fifo_status
+;	OR	A
+;	ENDIF
+;	IFDEF	EVO_RS232
+;rcv1	_Check_RX_Owerflow
+;	JZ	1f
+;	_prints msg_rx_owerflow
+;1	_HaveRXData
+;	ENDIF
+;	RET	Z		;//Return if zero
+;	_ReceveChar		;//get char
+;	_printc			;//print it
+;	JR	rcv1
 
 	include "demo_data.asm"
-	IFDEF	TS_ZIFI
-	include "../sockets/uart_ts_zifi.a80"
-	include "zifi.a80"
-	ENDIF
-	IFDEF	EVO_RS232
-	include "../sockets/uart_evo_rs232.a80"
-	ENDIF
 	include "../strings/strings.a80"
+	IFDEF	TS-CONF
+	include "ts-conf.a80"
+	ENDIF
 
 	endmodule

@@ -1,7 +1,8 @@
 cmd_cwmod	DB	'AT+CWMOD=1',13,10,0
 cmd_cmmod	DB	'AT+CMMOD=1',13,10,0
 cmd_cwjap	DB	'AT+CWJAP=',0
+cmd_cwlap	DB	'AT+CWJAP=',13,10,0	;‘―¨α®ª β®η¥ª ¤®αβ― 
 cmd_cifsr	DB	'AT+CIFSR',13,10,0
 cmd_cipmode	DB	'AT+CIPMODE=0',13,10,0
 cmd_cipmux	DB	'AT+CIPMUX=1',13,10,0
-cmd+cipstart	DB	'AT+CIPSTART',0
+cmd_cipstart	DB	'AT+CIPSTART',0
