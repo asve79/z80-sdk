@@ -1,6 +1,6 @@
 	MODULE	strings
 
-	include	"z80-sdk/math/math.a80"
+	include	"../math/math.a80"
 
 ;find end string. return HL to position with 0
 ;IN:

@@ -1,0 +1,30 @@
+#TO DO
+
+
+UART module universal structure:
+
+;Инициализация с установкой скорости
+;in: A - speed
+;    D - #01
+InitUart
+
+;Сброс праоаметров, очистка FIFO
+;in: D - #02
+ResetUart
+
+;Отправка
+;in: A - Byte
+;    D - #03
+SendByte
+;in: 
+;	HL - address
+;	BC - count
+;    D - #04
+SendArray
+
+;Прием
+ReceveByte
+ReceveArray
+
+;Status
+GetStatus

@@ -1,0 +1,42 @@
+;---IS HELP COMMAND MACROS ----------------------------------------------------------------------
+	MACRO	_ishelpcommand in_str,exit
+	_cmpstr command_bufer, cmd_help, 4
+	OR	A
+	JP	Z,1f
+	_closew
+	_prints	msg_help
+	_printw wnd_cmd
+	_cur_on
+	JP	exit
+1
+	ENDM
+;---IS ABOUT COMMAND MACROS ----------------------------------------------------------------------
+	MACRO	_isaboutcommand in_str,exit
+	_cmpstr command_bufer, cmd_about, 5
+	OR	A
+	JP	Z,1f
+	_closew
+	_prints	msg_about
+	_printw wnd_cmd
+	_cur_on
+	JP	exit
+1
+	ENDM
+;---IS EXIT COMMAND MACROS ----------------------------------------------------------------------
+	MACRO	_isexitcommand in_str,exit
+	_cmpstr command_bufer, cmd_exit, 4
+	OR	A
+	JP	Z,1f
+	JP	main.exit
+1
+	ENDM
+;-----------------------------
+	MACRO	_istermmode
+	LD	A,(mode)	;0 - termainl mode
+	OR	A
+	ENDM
+;-----------------------------
+	MACRO	_iscmdmode
+	LD	A,(mode)	;1 - command mode
+	CP	1
+	ENDM
