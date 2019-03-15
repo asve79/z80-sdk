@@ -26,7 +26,7 @@ wc3		DEC	HL				;Мотаем назад до кода 13 или до начала буфера (BC счетчик)
 		JR	Z,wc4
 		LD	A,C
 		OR	A
-		JR	NZ.wc3
+		JR	NZ,wc3
 		LD	A,B
 		OR	A
 		JR	NZ,wc3

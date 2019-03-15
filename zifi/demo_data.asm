@@ -56,6 +56,10 @@ msg_about
 	DB 13,'Window libs by https://github.com/mborisov1'
 	DB 13,13,0
 
+
+msg_init	DB	'Initialisation Zifi',13,0
+msg_scanap	DB	"Scan avalible AP's", 13,0
+
 mode		DB 0
 inc_addr 	DB 0
 

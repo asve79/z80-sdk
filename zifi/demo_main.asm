@@ -16,7 +16,10 @@
 PROG	
 	_printw wnd_main
 	_prints	msg_keys
+	;_printcrlf
+	_prints msg_init
 	_zifi_init
+	_prints msg_scanap
 	_zifi_list_ap
 
 	_cur_on
@@ -207,7 +210,7 @@ check_rcv;
 
 	include "demo_data.asm"
 	include "../strings/strings.a80"
-	IFDEF	TS-CONF
+	IFDEF	TS_ZIFI
 	include "ts-conf.a80"
 	ENDIF
 
