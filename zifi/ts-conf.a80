@@ -9,14 +9,20 @@
 ;o: A=0 - ok A=1 - ERROR
 wait_status	PUSH	BC
 		PUSH	HL
+		LD	BC,0000				;Счетчик
 ws2		CALL	uart_ts_zifi.rx_fifo_cnt
 		OR	A
-		JR	Z,ws6				;wait data
+		JR	Z,ws2				;wait data
+		LD	A,"r"
+		_printc
+		CALL	uart_ts_zifi.read_fifo_byte	;read byte
 		LD	(HL),A
 		INC	HL
 		INC	BC
 		CP	13				;if end-of-line (code 13)
 		JR	NZ,ws2				;
+		LD	A,"p"
+		_printc
 		PUSH	HL
 		PUSH	BC
 wc3		DEC	HL				;Мотаем назад до кода 13 или до начала буфера (BC счетчик)
@@ -32,12 +38,12 @@ wc3		DEC	HL				;Мотаем назад до кода 13 или до начала буфера (BC счетчик)
 		JR	NZ,wc3
 wc4		INC	HL				;а тут проверяем статус
 		LD	DE,msg_ok
-		LD	BC,3
+		LD	BC,4
 		CALL	check_status
 		OR	A
 		JR	Z,ws7				;Вернуться со статусов А=0 что есть найдено "ОК"
 		LD	DE,msg_error
-		LD	BC,6
+		LD	BC,7
 		CALL	check_status
 		OR	A
 		JR	Z,ws6				;Вернуться со статусом в А=1 что есть найдена "ERROR"
@@ -71,31 +77,42 @@ cstat_nf	XOR	A
 		POP	HL
 		RET
 
-msg_ok		DB	'OK',13
-msg_error	DB	'ERROR',13
+msg_ok		DB	10,'OK',13
+msg_error	DB	10,'ERROR',13
+
+
+;Отправить команду
+;i: HL - command
+send_cmd	LD	A,(HL)
+		OR	A
+		RET	Z
+		CALL	uart_ts_zifi.send_fifo_byte
+		INC	HL
+		JR	send_cmd	
 
 ;------------------------------------------------------------------------------------
 ;o: 
 ; A=0 - OK
 ; A=1 - ERROR
-init
-		JP	uart_ts_zifi.init	
+init		PUSH	HL
+		CALL	uart_ts_zifi.init
+		OR	A
+		POP	HL
+		RET	NZ
+		PUSH	HL
+		LD	HL,cmd_check
+		CALL	send_cmd
+		POP	HL
+		JP	wait_status
 
 ;------------------------------------------------------------------------------------
 ;i : HL - буфек для операций
 ;o : HL - указатель на сообщение
 ;  :  A - 0 - OK, 1- ERROR
 list_ap		PUSH	HL
-		LD	BC,#0000
 		LD	HL,cmd_cwlap
-liap1		LD	A,(HL)
-		OR	A
-		JR	Z,liap2
-		CALL	uart_ts_zifi.send_fifo_byte
-		INC	HL
-		INC	BC
-		JR	liap1
-liap2		POP	HL
+		CALL	send_cmd
+		POP	HL
 		JP	wait_status
 
 ;------------------------------------------------------------------------------------

@@ -18,7 +18,7 @@ PROG
 	_prints	msg_keys
 	;_printcrlf
 	_prints msg_init
-	_zifi_init
+	_zifi_init input_bufer
 	_prints msg_scanap
 	_zifi_list_ap input_bufer
 

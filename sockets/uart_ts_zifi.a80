@@ -37,8 +37,10 @@ init
 	in      a,(c)
 	cp      #ff
 	jr      z,nozifi
-	ld      a,#01
-	out     (c),a           ;Clear RX FIFO
+	;ld      a,#01
+	;out     (c),a           ;Clear RX FIFO
+	call	clear_output_fifo
+	call	clear_input_fifo
 	POP	DE
 	POP	BC
 	xor	A
@@ -84,8 +86,12 @@ zifi_command_result     ld	bc,error_reg
                         in	a,(c)
                         ret
 
-rx_fifo_cnt	ld 	bc,zifi_input_fifo_reg	
+;OUT:
+; 0 - input FIFO is empty
+rx_fifo_cnt	PUSH	BC
+		ld 	bc,zifi_input_fifo_reg	
                	in 	a,(c)
+               	POP	BC
                	RET
 
 ;OUT: 
@@ -105,15 +111,18 @@ read_fifo_byte  ld 	bc,data_reg	;assume what we call rx_fifo_cnt before
 
 ;IN:
 ; A - byte
-send_fifo_byte  push	AF
+send_fifo_byte  
+		PUSH 	BC
+		PUSH	AF
 1		call 	tx_fifo_cnt
 		OR	A
-		JR	Z,1b
+		JR	Z,1b		;Ждать освобождения буфера
                 ;call 	clear_output_fifo
                         
                 ld 	bc,data_reg
                 POP	AF
                 out 	(c),a
+                POP	BC
                 RET
 
 
