@@ -7,8 +7,9 @@
 	CALL	zifi.init
 	ENDM
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_list_ap buf
+	MACRO	_zifi_list_ap buf cred
 	LD	HL,buf
+	LD	DE,cred
 	CALL	zifi.list_ap
 	ENDM
 
