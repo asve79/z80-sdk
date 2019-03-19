@@ -6,7 +6,7 @@
 
 Именование макросов: Макрос именуется названием ф-ции с префиксом _zifi
 
-## TO DO / In progress
+## TO DO / In progress / Done
 
 - [x] init
 - [x] list_ap
@@ -17,6 +17,8 @@
 - [ ] close_tcp
 - [ ] send
 - [ ] receve
+
+- [ ] Обработка ситуации с таймаутом
 
 # Функции и макросы модуля
 
@@ -76,11 +78,12 @@
 	_curremt_ip bufer
 ```
 
-## disconnect_ap
-Отключиться от точки доступа
+## connect_ap
+Подключиться к точки доступа
 
 Вх:
  HL - адрес буфера
+ DE - адрес строки формата <ssid>.<pass>,0
 Вых:
  A=0 - ОК
  A=1 - ERROR
@@ -89,9 +92,10 @@
 Вызов:
 ```
 	ld hl,bufer
-	call zifi.disconnect_ap
+	ld de,input
+	call zifi.connect_ap
 ```
 	или
 ```
-	_disconnect_ap bufer
+	_connect_ap bufer
 ```
