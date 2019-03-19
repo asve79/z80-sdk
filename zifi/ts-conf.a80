@@ -7,55 +7,72 @@
 ;i: 
 ; HL - bufer
 ;o: A=0 - ok A=1 - ERROR
-wait_status	PUSH	BC
+wait_status	DI
+		PUSH	BC
+		PUSH	DE
 		PUSH	HL
+		LD	(ptr),HL
+		DEC	HL
 		LD	BC,0000				;Счетчик
-ws2		CALL	uart_ts_zifi.rx_fifo_cnt
+ws2;		PUSH	BC
+;		PUSH	DE
+;		PUSH	HL
+;		_hl_hex
+;		PUSH	BC
+;		POP	HL
+;		_hl_hex
+;		LD	A,13
+;		_printc
+;		POP	HL
+;		POP	DE
+;		POP	BC
+
+		CALL	uart_ts_zifi.rx_fifo_cnt
 		OR	A
 		JR	Z,ws2				;wait data
-		LD	A,"r"
-		_printc
+;		LD	A,"r"
+;		_printc
 		CALL	uart_ts_zifi.read_fifo_byte	;read byte
 		LD	(HL),A
+;		PUSH	AF
+;		_printc
+;		POP	AF
 		INC	HL
 		INC	BC
-		CP	13				;if end-of-line (code 13)
+		CP	10				;if end-of-line (code 13)
 		JR	NZ,ws2				;
-		LD	A,"p"
-		_printc
 		PUSH	HL
 		PUSH	BC
-wc3		DEC	HL				;Мотаем назад до кода 13 или до начала буфера (BC счетчик)
-		DEC	BC
-		LD	A,(HL)
-		CP	13
-		JR	Z,wc4
-		LD	A,C
-		OR	A
-		JR	NZ,wc3
-		LD	A,B
-		OR	A
-		JR	NZ,wc3
-wc4		INC	HL				;а тут проверяем статус
-		LD	DE,msg_ok
-		LD	BC,4
+wc4		LD	DE,msg_ok			;а тут проверяем статус
+		LD	BC,5
 		CALL	check_status
 		OR	A
-		JR	Z,ws7				;Вернуться со статусов А=0 что есть найдено "ОК"
+		JR	NZ,ws7				;Вернуться со статусов А=0 что есть найдено "ОК"
 		LD	DE,msg_error
-		LD	BC,7
+		LD	BC,8
 		CALL	check_status
 		OR	A
-		JR	Z,ws6				;Вернуться со статусом в А=1 что есть найдена "ERROR"
-		POP	BC				;Продолжаем принимать данные
-		POP	HL
-		JR	ws2
-ws7		XOR	A				;zero if no error
-ws6		POP	HL
+		JR	NZ,ws6				;Вернуться со статусом в А=1 что есть найдена "ERROR"
 		POP	BC
+		POP	HL				;Продолжаем принимать данные
+		DEC	HL
+		LD	(ptr),HL
+		INC	HL
+		JR	ws2
+ws7		POP	BC
+		POP	HL
+		XOR	A				;ОК
+		JR	ws8				
+ws6		POP	BC
+		POP	HL
+		LD	A,1				;ERROR
+ws8		POP	HL
+		POP	DE
+		POP	BC
+		EI
 		RET
 ;i:
-; HL - буфер
+; (ptr) - буфер
 ; DL - с чем сравниваем
 ; BC - сколько симовлов сравниваем
 ;o:
@@ -63,7 +80,30 @@ ws6		POP	HL
 ; 0 - не найдено
 ; 1 - найдено
 check_status	PUSH	HL
-cstat_loop	LD	A,(DE)
+		LD	HL,(ptr)
+;		PUSH	HL
+;		PUSH	DE
+;		PUSH	BC
+;		LD	A,'E'
+;		_printc
+;		POP	BC
+;		POP	DE
+;		POP	HL
+cstat_loop	;PUSH	HL
+;		PUSH	DE
+;		PUSH	BC
+;		LD	A,">"
+;		_printc
+;		LD	A,(HL)
+;		_a_hex
+;		LD	A,(DE)
+;		_a_hex
+;		LD	A,"<"
+;		_printc
+;		POP	BC
+;		POP	DE
+;		POP	HL
+		LD	A,(DE)
 		CPI
 		JNZ	cstat_nf
 		INC	DE
@@ -71,14 +111,44 @@ cstat_loop	LD	A,(DE)
 		DEC	C
 		JR	NZ,cstat_loop
 		LD	A,1
+;		PUSH	AF
+;		_a_hex
+;		LD	A,"*"
+;		_printc
+;		POP	AF
+;		PUSH	HL
+;		PUSH	DE
+;		PUSH	BC
+;		LD	A,'L'
+;		_printc
+;		POP	BC
+;		POP	DE
+;		POP	HL
+
 		POP	HL
 		RET
 cstat_nf	XOR	A
+;		PUSH	AF
+;		_a_hex
+;		LD	A,"*"
+;		_printc
+;		POP	AF
+;		PUSH	HL
+;		PUSH	DE
+;		PUSH	BC
+;		LD	A,'l'
+;		_printc
+;		POP	BC
+;		POP	DE
+;		POP	HL
+
+
 		POP	HL
 		RET
 
-msg_ok		DB	10,'OK',13
-msg_error	DB	10,'ERROR',13
+msg_ok		DB	10,'OK',13,10
+msg_error	DB	10,'ERROR',13,10
+ptr		DW	0		;Указатель на начало проверяемого блока
 
 
 ;Отправить команду

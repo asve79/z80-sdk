@@ -105,9 +105,11 @@ tx_fifo_cnt
 
 ;OUT:
 ; A - byte
-read_fifo_byte  ld 	bc,data_reg	;assume what we call rx_fifo_cnt before
+read_fifo_byte  PUSH	BC
+		ld 	bc,data_reg	;assume what we call rx_fifo_cnt before
 		in	a,(c)
-		ret
+		POP	BC
+		RET
 
 ;IN:
 ; A - byte

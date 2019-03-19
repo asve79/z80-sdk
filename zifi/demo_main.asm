@@ -19,12 +19,18 @@ PROG
 	;_printcrlf
 	_prints msg_init
 	_zifi_init input_bufer
+	_prints input_bufer
 	_prints msg_scanap
 	_zifi_list_ap input_bufer
+	_prints input_bufer
+	
+	LD	A,'>'
+	_printc
+
 
 	_cur_on
 
-mloop   CALL	check_rcv
+mloop   ;CALL	check_rcv
 	CALL    spkeyb.CONINW	;main loop entry
 	JZ	mloop		;wait a press key
 	PUSH 	AF
