@@ -8,14 +8,15 @@
 
 ## TO DO / In progress
 
-- init
-- list_ap
-- connect_ap
-- disconnect_ap
-- open_tcp
-- close_tcp
-- send
-- receve
+- [x] init
+- [x] list_ap
+- [ ] connect_ap
+- [x] current_ip
+- [x] disconnect_ap
+- [ ] open_tcp
+- [ ] close_tcp
+- [ ] send
+- [ ] receve
 
 # Функции и макросы модуля
 
@@ -53,4 +54,44 @@
 	или
 ```
 	_list_ap bufer
+```
+
+## current_ip
+Получить текущий IP адрес
+
+Вх:
+ HL - адрес буфера
+Вых:
+ A=0 - ОК
+ A=1 - ERROR
+ HL  - указатель на буфер с выводом ESP
+
+Вызов:
+```
+	ld hl,bufer
+	call zifi.curremt_ip
+```
+	или
+```
+	_curremt_ip bufer
+```
+
+## disconnect_ap
+Отключиться от точки доступа
+
+Вх:
+ HL - адрес буфера
+Вых:
+ A=0 - ОК
+ A=1 - ERROR
+ HL  - указатель на буфер с выводом ESP
+
+Вызов:
+```
+	ld hl,bufer
+	call zifi.disconnect_ap
+```
+	или
+```
+	_disconnect_ap bufer
 ```

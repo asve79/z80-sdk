@@ -13,26 +13,37 @@
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_disconnect_ap	
+	MACRO	current_ip buf
+	LD	HL,buf
+	CALL	zifi.current_ip
+	ENDM
+
+;------------------------------------------------------------------------------------
+	MACRO	_zifi_disconnect_ap buf
+	LD	HL,buf
 	CALL	zifi.disconnect_ap
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_open_tcp
+	MACRO	_zifi_open_tcp buf
+	LD	HL,buf
 	CALL	zifi.open_tcp
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_close_tcp
+	MACRO	_zifi_close_tcp buf
+	LD	HL,buf
 	CALL	zifi.close_tcp
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_send
+	MACRO	_zifi_send buf
+	LD	HL,buf
 	CALL	zifi.send
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_receve
+	MACRO	_zifi_receve buf
+	LD	HL,buf
 	CALL	zifi.receve
 	ENDM

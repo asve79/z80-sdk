@@ -36,7 +36,7 @@ ws2;		PUSH	BC
 		LD	(HL),A
 ;		PUSH	AF
 ;		_printc
-;		POP	AF
+		POP	AF
 		INC	HL
 		INC	BC
 		CP	10				;if end-of-line (code 13)
@@ -173,7 +173,17 @@ init		PUSH	HL
 		LD	HL,cmd_check
 		CALL	send_cmd
 		POP	HL
-		JP	wait_status
+		CALL	wait_status
+		PUSH	HL
+		LD	HL,cmd_cipmux
+		CALL	send_cmd
+		POP	HL
+		CALL	wait_status
+		LD	HL,cmd_cipmode
+		CALL	send_cmd
+		POP	HL
+		JP
+
 
 ;------------------------------------------------------------------------------------
 ;i : HL - буфек для операций
@@ -185,13 +195,29 @@ list_ap		PUSH	HL
 		POP	HL
 		JP	wait_status
 
+;-- Показать текущий IP -------------------------------------------------------------
+;i : HL - буфек для операций
+;o : HL - указатель на сообщение
+;  :  A - 0 - OK, 1- ERROR
+current_ip	PUSH	HL
+		LD	HL,cmd_cifsr
+		CALL	send_cmd
+		POP	HL
+		JP	wait_status
+
 ;------------------------------------------------------------------------------------
 connect_ap	
 		RET
 
-;------------------------------------------------------------------------------------
-disconnect_ap	
-		RET
+;--- отключиться от точки доступа ---------------------------------------------------
+;i : HL - буфек для операций
+;o : HL - указатель на сообщение
+;  :  A - 0 - OK, 1- ERROR
+disconnect_ap	PUSH	HL
+		LD	HL,cmd_cwqap
+		CALL	send_cmd
+		POP	HL
+		JP	wait_status
 
 
 ;------------------------------------------------------------------------------------
