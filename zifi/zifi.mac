@@ -1,24 +1,24 @@
-	MACRO	_zifi_connect_ap
-	CALL	zifi.connect_ap
-	ENDM
 ;------------------------------------------------------------------------------------
 	MACRO	_zifi_init buf
 	LD	HL,buf
 	CALL	zifi.init
 	ENDM
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_list_ap buf cred
+	MACRO	_zifi_list_ap buf
 	LD	HL,buf
-	LD	DE,cred
 	CALL	zifi.list_ap
 	ENDM
-
 ;------------------------------------------------------------------------------------
-	MACRO	current_ip buf
+	MACRO	_zifi_connect_ap buf, cred
+	LD	HL,buf
+	LD	DE,cred
+	CALL	zifi.connect_ap
+	ENDM
+;------------------------------------------------------------------------------------
+	MACRO	_zifi_current_ip buf
 	LD	HL,buf
 	CALL	zifi.current_ip
 	ENDM
-
 ;------------------------------------------------------------------------------------
 	MACRO	_zifi_disconnect_ap buf
 	LD	HL,buf

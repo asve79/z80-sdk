@@ -12,17 +12,37 @@
 	include "zifi.mac"
 	ENDIF
 
+credentials
+	DB	"ae-pio",0,"aewifi456",0
+
 ;- MAIN PROCEDURE -
 PROG	
-	_printw wnd_main
-	_prints	msg_keys
+	_printw wnd_main				;Основное окно
+	_prints	msg_keys				;Приветсвие
 	;_printcrlf
 	_prints msg_init
-	_zifi_init input_bufer
+	_fillzero input_bufer,#FF			
+	_zifi_init input_bufer				;Инициализация
 	_prints input_bufer
-	_prints msg_scanap
-	_zifi_list_ap input_bufer
+	_prints msg_separator
+;	_prints msg_scanap
+;	_zifi_list_ap input_bufer			;Списов точек доступа
+;	_prints input_bufer
+	_prints msg_separator
+	_prints msg_connect_ap
+	_fillzero input_bufer,#FF			
+	_zifi_connect_ap input_bufer, credentials	;Подключиться к точке доступа
 	_prints input_bufer
+	_prints msg_separator
+	_fillzero input_bufer,#FF			
+	_zifi_current_ip input_bufer			;Показать текущий IP
+	_prints input_bufer
+	_prints msg_separator
+	_prints msg_disconnect_ap
+	_fillzero input_bufer,#FF			
+	_zifi_disconnect_ap input_bufer			;Отключиться от AP
+	_prints input_bufer
+	_prints msg_separator
 	
 	LD	A,'>'
 	_printc

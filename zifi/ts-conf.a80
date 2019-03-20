@@ -36,7 +36,7 @@ ws2;		PUSH	BC
 		LD	(HL),A
 ;		PUSH	AF
 ;		_printc
-		POP	AF
+;		POP	AF
 		INC	HL
 		INC	BC
 		CP	10				;if end-of-line (code 13)
@@ -157,6 +157,10 @@ send_cmd	LD	A,(HL)
 		OR	A
 		RET	Z
 		CALL	uart_ts_zifi.send_fifo_byte
+		PUSH 	HL
+		LD	A,(HL)
+		_printc
+		POP	HL
 		INC	HL
 		JR	send_cmd	
 
@@ -179,10 +183,11 @@ init		PUSH	HL
 		CALL	send_cmd
 		POP	HL
 		CALL	wait_status
+		PUSH	HL
 		LD	HL,cmd_cipmode
 		CALL	send_cmd
 		POP	HL
-		JP
+		JP	wait_status
 
 
 ;------------------------------------------------------------------------------------
@@ -211,28 +216,27 @@ current_ip	PUSH	HL
 ;o : HL - указатель на сообщение
 ;  :  A - 0 - OK, 1- ERROR
 connect_ap	PUSH 	HL
-		PUSH	DE
 		EX 	DE,HL
-		LD	DE,cmd_cwjap		;копируем команду AT+CWJAP="
+		PUSH	HL
+		LD	HL,cmd_cwjap		;копируем команду AT+CWJAP="
 		LD	BC,10
 		LDIR
-		POP	DE
+		POP	HL			;HL=<ssid>,0,<pass>,0
 cap1		LDI				;Копируем SSID
-		LD	A,(DE)
+		LD	A,(HL)
 		OR	A
 		JR	NZ,cap1
-		INC	DE
-		PUSH	DE
-		LD	DE,cmd_quetesp		;копируеем разделитьель ","
+		INC	HL
+		PUSH	HL
+		LD	HL,cmd_quetesp		;копируеем разделитьель ","
 		LD	BC,3
 		LDIR
-		POP	DE
+		POP	HL			;HL=<pass>,0
 cap2		LDI				;Копируем пароль
-		LD	A,(DE)
+		LD	A,(HL)
 		OR	A
 		JR	NZ,cap2
-		INC	DE
-		LD	DE,cmd_quetesend	;копируем завершающую строку ",13,10,0
+		LD	HL,cmd_quetesend	;копируем завершающую строку ",13,10,0
 		LD	BC,4
 		LDIR
 		POP	HL

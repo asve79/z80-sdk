@@ -10,7 +10,7 @@
 
 - [x] init
 - [x] list_ap
-- [ ] connect_ap
+- [x] connect_ap
 - [x] current_ip
 - [x] disconnect_ap
 - [ ] open_tcp
@@ -53,7 +53,7 @@
 ```
 	или
 ```
-	_list_ap bufer
+	_zifi_list_ap bufer
 ```
 
 ## current_ip - Получить текущий IP адрес
@@ -72,10 +72,10 @@
 ```
 	или
 ```
-	_curremt_ip bufer
+	_zifi_curremt_ip bufer
 ```
 
-## connect_ap - Подключиться к точки доступа
+## connect_ap - Подключиться к точке доступа
 
 Вх:
  HL - адрес буфера
@@ -93,5 +93,24 @@
 ```
 	или
 ```
-	_connect_ap bufer, input
+	_zifi_connect_ap bufer, input
+```
+
+## disconnect_ap - Отключиться от точки доступа
+
+Вх:
+ HL - адрес буфера
+Вых:
+ A=0 - ОК
+ A=1 - ERROR
+ HL  - указатель на буфер с выводом ESP
+
+Вызов:
+```
+	ld hl,bufer
+	call zifi.disconnect_ap
+```
+	или
+```
+	_zifi_disconnect_ap bufer
 ```
