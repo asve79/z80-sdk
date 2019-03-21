@@ -1,0 +1,19 @@
+a_dec	PUSH	HL
+	ld	hl,NUMBUFF
+	ld	(hl),#2f
+	inc	(hl)
+	sub	100
+	jr	nc,$-3
+	add	a,100
+	inc	hl
+	ld	(hl),#2f
+	inc	(hl)
+	sub	10
+	jr	nc,$-3
+	add	a,10
+	inc	hl
+	add	a,"0"
+	ld	(hl),a
+	POP	HL
+	ret
+NUMBUFF DEFB	"00000"

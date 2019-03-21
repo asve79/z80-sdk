@@ -1,0 +1,37 @@
+;http://wikiti.brandonw.net/index.php?title=Z80_Routines:Other:DispHL
+;Number in de to decimal ASCII on HL
+;Thanks to z80 Bits
+;inputs:	
+; de = number
+; hl = bufer to write
+;example: hl=300 outputs '00300'
+;destroys: af, bc, hl, de used
+de_dec_hl
+	PUSH	AF
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	EX	HL,DE
+	ld	bc,-10000
+	CALL	Num1
+	ld	bc,-1000
+	CALL	Num1
+	ld	bc,-100
+	CALL	Num1
+	ld	c,-10
+	CALL	Num1
+	ld	c,-1
+Num1:	ld	a,'0'-1
+Num2:	inc	a
+	add	hl,bc
+	jr	c,Num2
+	sbc	hl,bc
+	EX	DE,HL
+	LD	(HL),A
+	INC	HL
+	EX	DE,HL
+	POP	HL
+	POP	DE
+	POP	DE
+	POP	AF
+	RET
