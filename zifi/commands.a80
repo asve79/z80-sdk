@@ -1,12 +1,15 @@
 cmd_cwmod	DB	'AT+CWMOD=1',13,10,0
 cmd_cmmod	DB	'AT+CMMOD=1',13,10,0
-cmd_cwjap	DB	'AT+CWJAP="'		;������������ � AP 'AT+CWJAP="ssid","pass"''
+cmd_cwjap	DB	'AT+CWJAP="'		;Подкключиться к AP 'AT+CWJAP="ssid","pass"''
 cmd_quetesp	DB	'","'
 cmd_quetesend	DB	'"',13,10,0
-cmd_cwlap	DB	'AT+CWLAP',13,10,0	;���᮪ �祪 ���⯠
-cmd_cifsr	DB	'AT+CIFSR',13,10,0	;⥪�騩 IP ����
-cmd_cwqap	DB	'AT+CWQAP',13,10,0	;�⪫������ �� �窨 ����㯠
-cmd_cipmode	DB	'AT+CIPMODE=0',13,10,0
-cmd_cipmux	DB	'AT+CIPMUX=1',13,10,0
-cmd_cipstart	DB	'AT+CIPSTART',0
+cmd_cwlap	DB	'AT+PING="',13,10,0	;Пингануть адрес
+cmd_cwlap	DB	'AT+CWLAP',13,10,0	;Список точек достпа
+cmd_cifsr	DB	'AT+CIFSR',13,10,0	;текущий IP адрес
+cmd_cwqap	DB	'AT+CWQAP',13,10,0	;отключиться от точки доступа
+cmd_cipmode	DB	'AT+CIPMODE=0',13,10,0	;0 — нормальный режим 1 — сквозной режим UART-WiFi (только для одинарного TCP-соединени)
+cmd_cipmux	DB	'AT+CIPMUX=1',13,10,0	;Множественное соединение возможно
+cmd_cipstart	DB	'AT+CIPSTART="'		;Открыть соединение TCP или UDP (Прим: AT+CIPSTART="TCP", "192.168.101.100", 1000)
+cmd_tcp		DB	'TCP","'
+cmd_udp		DB	'UDP","'	
 cmd_check	DB	'AT',13,10,0

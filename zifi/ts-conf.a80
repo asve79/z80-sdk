@@ -174,17 +174,17 @@ init		PUSH	HL
 		POP	HL
 		RET	NZ
 		PUSH	HL
-		LD	HL,cmd_check
+		LD	HL,cmd_check		;Просто получить OK от модуля
 		CALL	send_cmd
 		POP	HL
 		CALL	wait_status
 		PUSH	HL
-		LD	HL,cmd_cipmux
+		LD	HL,cmd_cipmux		;Множественное соединение
 		CALL	send_cmd
 		POP	HL
 		CALL	wait_status
 		PUSH	HL
-		LD	HL,cmd_cipmode
+		LD	HL,cmd_cipmode	
 		CALL	send_cmd
 		POP	HL
 		JP	wait_status
@@ -255,21 +255,110 @@ disconnect_ap	PUSH	HL
 		JP	wait_status
 
 
-;------------------------------------------------------------------------------------
-open_tcp
+;-- открыть TCP соединение ----------------------------------------------------------
+;i : HL - буфек для операций
+;  : DE - address,0,port,0
+;o : HL - указатель на сообщение
+;  :  A - 0-9 - Connection ID, #FF - ERROR
+;+CIPSTART: (id), (<тип>), (<ip>), (<порт>)
+;AT+CIPSTART="TCP", "192.168.101.100", 1000
+open_tcp	PUSH	HL	
+		PUSH	DE
+		EX 	DE,HL
+		PUSH	HL
+		LD	HL,cmd_cipstart	;копируем команду AT+START="
+		LD	BC,12
+		LDIR
+		LD	HL,cmd_tcp	;копируем строку TCP","
+		LD	BC,13
+		LDIR
+		POP	HL			;HL=<host>,0,<port>,0
+ot1		LDI				;Копируем SSID
+		LD	A,(HL)
+		OR	A
+		JR	NZ,ot1
+		INC	HL
+		PUSH	HL
+		LD	HL,cmd_quetesp		;копируеем разделитьель '",'
+		LD	BC,2
+		LDIR
+		POP	HL			;HL=<port>,0
+ot2		LDI				;Копируем порт
+		LD	A,(HL)
+		OR	A
+		JR	NZ,ot2
+		LD	HL,cmd_quetesend+1	;копируем завершающую строку 13,10,0
+		LD	BC,3
+		LDIR
+		POP	HL
+		CALL	send_cmd
+
+		POP	DE
+		POP	HL
+		CALL	wait_status
+						;тут надо брать идентификатор
 		RET
 
-;------------------------------------------------------------------------------------
-close_tcp
-		RET
+;-- Закрыть TCP соединение ----------------------------------------------------------
+;i : HL - буфек для операций
+;  : A - <ID>
+;o : HL - указатель на сообщение
+;  :  A - 0 - OK, 1- ERROR
+;AT+CIPCLOSE=<id>
+close_tcp	PUSH	HL
+		EX 	DE,HL
+		PUSH	HL
+		LD	HL,cmd_cipclose	;копируем команду AT+CLOSE=
+		LD	BC,9
+		LDIR
+		ADD	'0'
+		LD	(HL),A		;вставлем идентификатор соединения
+		INC	HL
+		LD	HL,cmd_quetesend+1	;копируем завершающую строку 13,10,0
+		LD	BC,3
+		LDIR
+		POP	HL
+		CALL	send_cmd
+		POP	HL
+		JP	wait_status
 
-;------------------------------------------------------------------------------------
+;-- Отправить данные ----------------------------------------------------------------
 send		
 		RET
 
-;------------------------------------------------------------------------------------
+;-- Принять данные ------------------------------------------------------------------
 receve		
 		RET
+
+;-- PING адреса ---------------------------------------------------------------------
+;i : HL - буфек для операций
+;  : DE - addr,0
+;o : HL - указатель на сообщение
+;  :  A - 0 - OK, 1- ERROR
+;AT+PING="192.168.1.1"
+;AT+PING="www.ya.ru"
+ping		PUSH 	HL
+		PUSH	DE
+		EX 	DE,HL
+		PUSH	HL
+		LD	HL,cmd_ping		;копируем команду AT+PING="
+		LD	BC,9
+		LDIR
+		POP	HL			;HL=<ardr>,0
+ping1		LDI				;Копируем адрес
+		LD	A,(HL)
+		OR	A
+		JR	NZ,ping1
+		INC	HL
+		PUSH	HL
+		LD	HL,cmd_quetesend		;;копируем завершающую строку ",13,10,0
+		LD	BC,4
+		LDIR
+		POP	HL
+		CALL	send_cmd
+		POP	DE
+		POP	HL
+		JP	wait_status
 
 		include	"commands.a80"
 		include "../sockets/uart_ts_zifi.a80"
