@@ -26,14 +26,14 @@
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_open_tcp buf addr
+	MACRO	_zifi_open_tcp buf, addr
 	LD	HL,buf
 	LD	DE,addr
 	CALL	zifi.open_tcp
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_ping buf addr
+	MACRO	_zifi_ping buf, addr
 	LD	HL,buf
 	LD	DE,addr
 	CALL	zifi.ping

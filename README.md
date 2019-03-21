@@ -1,15 +1,16 @@
 # z80-sdk
 
-## SDK contain:
+## SDK contains:
 
-- lite windows system
-- simple math library
-- simple string library
-- uart library
-- uart_ts_rs232		;UART library for ZX Evolution TS-CONF RS232 Port
-- uart_ts_zifi		;UART library for ZX Evolution TS-CONF ZIFI Port
-- uart_evo_rs232	;UART library for ZX Evolution Base and Profi
+- Lite windows system for standart ZX Spectrum videomode
+- Wild commander API's library (windows. keys, files, pages)
+- Simple math library
+- Simple string library
+- Uart library
+- Uart_ts_rs232		;UART library for ZX Evolution TS-CONF RS232 Port
+- Uart_ts_zifi		;UART library for ZX Evolution TS-CONF ZIFI Port
+- Uart_evo_rs232	;UART library for ZX Evolution Base and Profi
 
 ## Under construction
-- zifi 			;ZIFI library. Based on UART modules.
-- uart_zxnext		;UART librory for ZX Spectrum Next
+- Zifi 				;ZIFI library. Based on UART modules.
+- Uart_zxnext		;UART librory for ZX Spectrum Next

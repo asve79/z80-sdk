@@ -149,7 +149,8 @@ cstat_nf	XOR	A
 msg_ok		DB	10,'OK',13,10
 msg_error	DB	10,'ERROR',13,10
 ptr		DW	0		;Указатель на начало проверяемого блока
-
+connections	DB	0		;кол-во открытых соединений
+registry	DS	3*9,0		;Реестр с форматом <id><адрес_буфреа>
 
 ;Отправить команду
 ;i: HL - command
@@ -296,11 +297,12 @@ ot2		LDI				;Копируем порт
 		POP	DE
 		POP	HL
 		CALL	wait_status
-						;тут надо брать идентификатор
+		;* TODO получать идентификатор
+						;тут надо получать идентификатор
 		RET
 
 ;-- Закрыть TCP соединение ----------------------------------------------------------
-;i : HL - буфек для операций
+;i : HL - буфер для операций
 ;  : A - <ID>
 ;o : HL - указатель на сообщение
 ;  :  A - 0 - OK, 1- ERROR
@@ -308,7 +310,7 @@ ot2		LDI				;Копируем порт
 close_tcp	PUSH	HL
 		EX 	DE,HL
 		PUSH	HL
-		LD	HL,cmd_cipclose	;копируем команду AT+CLOSE=
+		LD	HL,cmd_close	;копируем команду AT+CLOSE=
 		LD	BC,9
 		LDIR
 		ADD	'0'
@@ -321,14 +323,6 @@ close_tcp	PUSH	HL
 		CALL	send_cmd
 		POP	HL
 		JP	wait_status
-
-;-- Отправить данные ----------------------------------------------------------------
-send		
-		RET
-
-;-- Принять данные ------------------------------------------------------------------
-receve		
-		RET
 
 ;-- PING адреса ---------------------------------------------------------------------
 ;i : HL - буфек для операций
@@ -359,6 +353,76 @@ ping1		LDI				;Копируем адрес
 		POP	DE
 		POP	HL
 		JP	wait_status
+
+;-- Отправить данные ----------------------------------------------------------------
+;i : HL - буфер для операций. 
+;  : DE - буфер с данными
+;  : A - <ID>
+;  : BC - размер
+;o : HL - указатель на сообщение
+;  :  A - 0 - OK, 1- ERROR
+;AT+CIPSEND=<id>, <размер> <данные>
+send		PUSH	HL
+		PUSH	DE
+		EX	HL,DE		;Записать в registry идентификатор и адрес буфера в который будут записаны данные
+		LD	HL,registry
+		LD	(HL),A
+		INC 	HL
+		LD	(HL),E
+		INC	HL
+		LD	(HL),D
+		POP	DE
+		POP	HL
+		PUSH	HL
+		PUSH	DE
+		EX 	DE,HL
+		PUSH	HL
+		LD	HL,cmd_cipsend	;копируем команду AT+CIPSEND=
+		LD	BC,11
+		LDIR
+		ADD	'0'
+		LD	(HL),A		;вставлем идентификатор соединения
+		INC	HL
+		LD	A,','		;вставить запятую
+		LD	(HL),A
+		INC	HL
+		PUSH	BC
+		POP	HL
+		_bc_dec_hl		;"напечатать в буфер размер
+		POP	HL
+		CALL	send_cmd	
+		POP	DE
+		POP	HL
+		PUSH	HL
+		PUSH	DE
+send1		LD	A,(DE)		;Отправить <BC> байт в порт
+		CALL	uart_ts_zifi.send_fifo_byte
+		INC	DE
+		DEC	BC
+		LD	A,C
+		OR	A
+		JR	NZ,send1
+		LD	A,B
+		OR	A
+		JR	NZ,send1
+		POP	DE
+		POP	HL
+		JP	wait_status
+
+;-- Принять данные ------------------------------------------------------------------
+;i : HL - буфер для операций. 
+;o : HL - указатель на сообщение
+;  :  A - 0 - OK, 1- ERROR
+;AT+IPD
+receve		PUSH	HL
+		LD	HL,cmd_ipd	;копируем команду AT+IPD,13,10,0
+		LD	BC,11
+		LDIR
+
+		POP	HL
+		RET
+
+
 
 		include	"commands.a80"
 		include "../sockets/uart_ts_zifi.a80"

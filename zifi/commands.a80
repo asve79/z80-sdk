@@ -3,7 +3,7 @@ cmd_cmmod	DB	'AT+CMMOD=1',13,10,0
 cmd_cwjap	DB	'AT+CWJAP="'		;Подкключиться к AP 'AT+CWJAP="ssid","pass"''
 cmd_quetesp	DB	'","'
 cmd_quetesend	DB	'"',13,10,0
-cmd_cwlap	DB	'AT+PING="',13,10,0	;Пингануть адрес
+cmd_ping	DB	'AT+PING="',13,10,0	;Пингануть адрес
 cmd_cwlap	DB	'AT+CWLAP',13,10,0	;Список точек достпа
 cmd_cifsr	DB	'AT+CIFSR',13,10,0	;текущий IP адрес
 cmd_cwqap	DB	'AT+CWQAP',13,10,0	;отключиться от точки доступа
@@ -13,3 +13,6 @@ cmd_cipstart	DB	'AT+CIPSTART="'		;Открыть соединение TCP или
 cmd_tcp		DB	'TCP","'
 cmd_udp		DB	'UDP","'	
 cmd_check	DB	'AT',13,10,0
+cmd_close	DB	'AT+CLOSE='		;Закрыть соединение TCP или UDP
+cmd_cipsend	DB	'AT+CIPSEND='		;Отправить данные AT+CIPSEND=<id>,<размер> <данныеЮ
+cmd_ipd		DB	'AT+IPD',13,10,0	;+IPD, <id>, <размер>: <данные>
