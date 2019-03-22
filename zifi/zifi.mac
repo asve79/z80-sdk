@@ -26,9 +26,13 @@
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_open_tcp buf, addr
-	LD	HL,buf
+	MACRO	_zifi_open_tcp oper_buf, addr, inp_buf, max_size
+	LD	HL,oper_buf
 	LD	DE,addr
+	EXX
+	LD	DE,inp_buf
+	EXX
+	LD	BC, max_size
 	CALL	zifi.open_tcp
 	ENDM
 

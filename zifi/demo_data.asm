@@ -65,6 +65,13 @@ msg_connect_ap	DB	"Connecting to AP", 13,0
 msg_disconnect_ap
 		DB	"Disconnect AP", 13,0
 
+msg_ping_ya_ru	DB	"Ping yandex.ru for test",13,0
+addr_ya		DB	"yandex.ru",0	; \ for test ping and connect 
+port_ya		DB	"80",0		; /
+
+msg_openconn_1	DB	"Open connection 1",13,0
+msg_closeconn_1	DB	"Close connection 1",13,0
+
 mode		DB 0
 inc_addr 	DB 0
 
@@ -95,3 +102,4 @@ command_bufer	DEFS #FF,0
 input_bufer	DEFS #FF,0
 		DB 13
 data_bufer	DEFS #FF,0
+rcv_bufer	DEFS 1024,0

@@ -20,29 +20,57 @@ PROG
 	_printw wnd_main				;Основное окно
 	_prints	msg_keys				;Приветсвие
 	;_printcrlf
+;	------------------------------------------
 	_prints msg_init
 	_fillzero input_bufer,#FF			
 	_zifi_init input_bufer				;Инициализация
 	_prints input_bufer
 	_prints msg_separator
+;	------------------------------------------
 ;	_prints msg_scanap
 ;	_zifi_list_ap input_bufer			;Списов точек доступа
 ;	_prints input_bufer
 	_prints msg_separator
+;	------------------------------------------
 	_prints msg_connect_ap
 	_fillzero input_bufer,#FF			
 	_zifi_connect_ap input_bufer, credentials	;Подключиться к точке доступа
 	_prints input_bufer
 	_prints msg_separator
+;	------------------------------------------
 	_fillzero input_bufer,#FF			
 	_zifi_current_ip input_bufer			;Показать текущий IP
 	_prints input_bufer
 	_prints msg_separator
+;	------------------------------------------
+	_prints msg_ping_ya_ru
+	_fillzero input_bufer,#FF			
+	_zifi_ping input_bufer, addr_ya			;Пингануть хост яндекса
+	_prints input_bufer
+	_prints msg_separator
+;	------------------------------------------
+	_prints msg_openconn_1
+	_fillzero input_bufer,#FF	
+	_fillzero rcv_bufer,#FF
+	_fillzero rcv_bufer+#FF,#FF
+	_fillzero rcv_bufer+#1FF,#FF
+	_zifi_open_tcp input_bufer, addr_ya, rcv_bufer,1024	;Открыть соединение 1
+	_prints input_bufer
+	_prints msg_separator
+;	------------------------------------------
+	_prints msg_closeconn_1
+	_fillzero input_bufer,#FF
+	LD	A,1					;Номер канала	
+	_zifi_close_tcp input_bufer			;Закрыть соединение 1
+	_prints input_bufer
+	_prints msg_separator
+;	------------------------------------------
 	_prints msg_disconnect_ap
 	_fillzero input_bufer,#FF			
 	_zifi_disconnect_ap input_bufer			;Отключиться от AP
 	_prints input_bufer
 	_prints msg_separator
+;	------------------------------------------
 	
 	LD	A,'>'
 	_printc

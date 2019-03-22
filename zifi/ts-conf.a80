@@ -150,7 +150,7 @@ msg_ok		DB	10,'OK',13,10
 msg_error	DB	10,'ERROR',13,10
 ptr		DW	0		;Указатель на начало проверяемого блока
 connections	DB	0		;кол-во открытых соединений
-registry	DS	3*9,0		;Реестр с форматом <id><адрес_буфреа>
+registry	DS	5*9,0		;Реестр с форматом <id><адрес_буфреа><максимальный размер буфера>
 
 ;Отправить команду
 ;i: HL - command
@@ -257,21 +257,40 @@ disconnect_ap	PUSH	HL
 
 
 ;-- открыть TCP соединение ----------------------------------------------------------
-;i : HL - буфек для операций
+;i : HL - буфер для операций.
 ;  : DE - address,0,port,0
+;  : DE` - адрес приемного буфера для данного канала. Адреc будет зарегистрирован в реестре. При входящие данных по данному дескриптору будут отправляться в этот буфер
+;  : BC - максимальный размер буфера
 ;o : HL - указатель на сообщение
 ;  :  A - 0-9 - Connection ID, #FF - ERROR
 ;+CIPSTART: (id), (<тип>), (<ip>), (<порт>)
 ;AT+CIPSTART="TCP", "192.168.101.100", 1000
-open_tcp	PUSH	HL	
+open_tcp	PUSH	HL
+		LD	A,1		;TODO : получать дескриптор динамически. Пока 1 как заглушка
+		LD	HL,registry	;Записать в registry идентификатор и адрес буфера в который будут записаны данные
+		LD	(HL),A
+		INC 	HL
+		EXX
+		LD	(HL),E
+		EXX
+		INC	HL
+		EXX
+		LD	(HL),D
+		EXX
+		INC	HL
+		LD	(HL),C
+		INC	HL
+		LD	(HL),B
+		POP	HL
+		PUSH	HL		;----------------- работаем	
 		PUSH	DE
 		EX 	DE,HL
 		PUSH	HL
 		LD	HL,cmd_cipstart	;копируем команду AT+START="
-		LD	BC,12
+		LD	BC,10
 		LDIR
 		LD	HL,cmd_tcp	;копируем строку TCP","
-		LD	BC,13
+		LD	BC,6
 		LDIR
 		POP	HL			;HL=<host>,0,<port>,0
 ot1		LDI				;Копируем SSID
@@ -298,7 +317,12 @@ ot2		LDI				;Копируем порт
 		POP	HL
 		CALL	wait_status
 		;* TODO получать идентификатор
+		OR	A
+		JR	NZ,oterr
+		LD	A,1			;DUMMY
 						;тут надо получать идентификатор
+		RET
+oterr		LD	A,#FF			;ERROR
 		RET
 
 ;-- Закрыть TCP соединение ----------------------------------------------------------
@@ -333,6 +357,7 @@ close_tcp	PUSH	HL
 ;AT+PING="www.ya.ru"
 ping		PUSH 	HL
 		PUSH	DE
+		PUSH	HL
 		EX 	DE,HL
 		PUSH	HL
 		LD	HL,cmd_ping		;копируем команду AT+PING="
@@ -344,7 +369,6 @@ ping1		LDI				;Копируем адрес
 		OR	A
 		JR	NZ,ping1
 		INC	HL
-		PUSH	HL
 		LD	HL,cmd_quetesend		;;копируем завершающую строку ",13,10,0
 		LD	BC,4
 		LDIR
@@ -363,17 +387,6 @@ ping1		LDI				;Копируем адрес
 ;  :  A - 0 - OK, 1- ERROR
 ;AT+CIPSEND=<id>, <размер> <данные>
 send		PUSH	HL
-		PUSH	DE
-		EX	HL,DE		;Записать в registry идентификатор и адрес буфера в который будут записаны данные
-		LD	HL,registry
-		LD	(HL),A
-		INC 	HL
-		LD	(HL),E
-		INC	HL
-		LD	(HL),D
-		POP	DE
-		POP	HL
-		PUSH	HL
 		PUSH	DE
 		EX 	DE,HL
 		PUSH	HL

@@ -13,13 +13,14 @@
 - [x] connect_ap
 - [x] current_ip
 - [x] disconnect_ap
-- [ ] ping
+- [x] ping
 - [ ] open_tcp
 - [ ] close_tcp
 - [ ] send
 - [ ] receve
 
 - [ ] Обработка ситуации с таймаутом
+- [ ] Работа с реекстром подключений (выделение номера, удаление номера)
 
 # Функции и макросы модуля
 
@@ -131,3 +132,47 @@
 	_zifi_ping bufer, addr
 ```
 
+## open_tcp - Открыть TCP соединение
+Вх:
+     HL - буфер для операций.
+     DE - address,0,port,0
+     DE` - адрес приемного буфера для данного канала. Адреc будет зарегистрирован в реестре. При входящие данных по данному дескриптору будут отправляться в этот буфер
+     BC - максимальный размер буфера
+Вых:
+     HL - указатель на сообщение
+      A - 0-9 - Connection ID, #FF - ERROR
+
+Вызов:
+```
+	ld hl,res_bufer
+	ld de,addr_url
+	exx
+	ld de,rcv_buf
+	BC,512
+	call zifi.open_tcp
+```
+	или
+```
+	_zifi_open_tcp obufer, addr, rcv_buf, 512
+```
+
+## close_tcp - закрыть TCP соединение
+Вх:
+     HL - буфер для операций.
+     A - номер соединения
+Вых:
+     HL - указатель на сообщение
+	 A=0 - ОК
+ 	 A=1 - ERROR
+
+Вызов:
+```
+	ld hl,bufer
+	ld a,1
+	call zifi.close_tcp
+```
+	или
+```
+	LD A,1
+	_zifi_close_tcp bufer
+```
