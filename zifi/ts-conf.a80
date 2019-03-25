@@ -264,19 +264,21 @@ disconnect_ap	PUSH	HL
 ;o : HL - указатель на сообщение
 ;  :  A - 0-9 - Connection ID, #FF - ERROR
 ;+CIPSTART: (id), (<тип>), (<ip>), (<порт>)
-;AT+CIPSTART="TCP", "192.168.101.100", 1000
+;AT+CIPSTART=1, "TCP", "192.168.101.100", 1000
 open_tcp	PUSH	HL
 		LD	A,1		;TODO : получать дескриптор динамически. Пока 1 как заглушка
 		LD	HL,registry	;Записать в registry идентификатор и адрес буфера в который будут записаны данные
 		LD	(HL),A
 		INC 	HL
+		PUSH	HL
 		EXX
+		POP	HL
 		LD	(HL),E
-		EXX
 		INC	HL
-		EXX
 		LD	(HL),D
+		PUSH	HL
 		EXX
+		POP	HL
 		INC	HL
 		LD	(HL),C
 		INC	HL
@@ -284,10 +286,16 @@ open_tcp	PUSH	HL
 		POP	HL
 		PUSH	HL		;----------------- работаем	
 		PUSH	DE
-		EX 	DE,HL
+		EX 	DE,HL		;HL=<host>,0,<port>,0
 		PUSH	HL
-		LD	HL,cmd_cipstart	;копируем команду AT+START="
-		LD	BC,10
+		LD	HL,cmd_cipstart	;копируем команду AT+CIPSTART="
+		LD	BC,12
+		LDIR
+		LD	A,'1'		;!!!!!!!!!!!!DUMMY!!!!!!!!!!11
+		LD	(DE),A
+		INC	DE
+		LD	HL,cmd_quetesp+1  ;копируеем разделитьель ',"'
+		LD	BC,2
 		LDIR
 		LD	HL,cmd_tcp	;копируем строку TCP","
 		LD	BC,6
@@ -310,11 +318,12 @@ ot2		LDI				;Копируем порт
 		LD	HL,cmd_quetesend+1	;копируем завершающую строку 13,10,0
 		LD	BC,3
 		LDIR
+		POP	DE
 		POP	HL
 		CALL	send_cmd
 
-		POP	DE
-		POP	HL
+;		POP	DE
+;		POP	HL
 		CALL	wait_status
 		;* TODO получать идентификатор
 		OR	A
@@ -333,19 +342,17 @@ oterr		LD	A,#FF			;ERROR
 ;AT+CIPCLOSE=<id>
 close_tcp	PUSH	HL
 		EX 	DE,HL
-		PUSH	HL
-		LD	HL,cmd_close	;копируем команду AT+CLOSE=
-		LD	BC,9
+		LD	HL,cmd_close	;копируем команду AT+CIPCLOSE=
+		LD	BC,12
 		LDIR
 		ADD	'0'
-		LD	(HL),A		;вставлем идентификатор соединения
-		INC	HL
+		LD	(DE),A		;вставлем идентификатор соединения
+		INC	DE
 		LD	HL,cmd_quetesend+1	;копируем завершающую строку 13,10,0
 		LD	BC,3
 		LDIR
 		POP	HL
 		CALL	send_cmd
-		POP	HL
 		JP	wait_status
 
 ;-- PING адреса ---------------------------------------------------------------------

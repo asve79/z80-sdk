@@ -13,6 +13,6 @@ cmd_cipstart	DB	'AT+CIPSTART="'		;Открыть соединение TCP или
 cmd_tcp		DB	'TCP","'
 cmd_udp		DB	'UDP","'	
 cmd_check	DB	'AT',13,10,0
-cmd_close	DB	'AT+CLOSE='		;Закрыть соединение TCP или UDP
+cmd_close	DB	'AT+CIPCLOSE='		;Закрыть соединение TCP или UDP
 cmd_cipsend	DB	'AT+CIPSEND='		;Отправить данные AT+CIPSEND=<id>,<размер> <данныеЮ
 cmd_ipd		DB	'AT+IPD',13,10,0	;+IPD, <id>, <размер>: <данные>

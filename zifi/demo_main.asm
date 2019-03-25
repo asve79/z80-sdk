@@ -30,7 +30,7 @@ PROG
 ;	_prints msg_scanap
 ;	_zifi_list_ap input_bufer			;Списов точек доступа
 ;	_prints input_bufer
-	_prints msg_separator
+;	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_connect_ap
 	_fillzero input_bufer,#FF			
