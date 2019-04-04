@@ -1,0 +1,5 @@
+cmd: "_make.bat"
+name: "make"
+sh: true
+errorMatch:
+ - (?<file>[0-9a-zA-Z._-]+)\((?<line>\d+)\):\serror:\s(?<message>.*)

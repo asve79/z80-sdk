@@ -4,7 +4,7 @@
 ;Сервисные ф-ции
 ;------------------------------------------------------------------------------------
 ;Принять ответ от модуля и проанализировать статус выполнения команды
-;i: 
+;i:
 ; HL - bufer
 ;o: A=0 - ok A=1 - ERROR
 wait_status	DI
@@ -62,7 +62,7 @@ wc4		LD	DE,msg_ok			;а тут проверяем статус
 ws7		POP	BC
 		POP	HL
 		XOR	A				;ОК
-		JR	ws8				
+		JR	ws8
 ws6		POP	BC
 		POP	HL
 		LD	A,1				;ERROR
@@ -163,10 +163,10 @@ send_cmd	LD	A,(HL)
 		_printc
 		POP	HL
 		INC	HL
-		JR	send_cmd	
+		JR	send_cmd
 
 ;------------------------------------------------------------------------------------
-;o: 
+;o:
 ; A=0 - OK
 ; A=1 - ERROR
 init		PUSH	HL
@@ -185,7 +185,7 @@ init		PUSH	HL
 		POP	HL
 		CALL	wait_status
 		PUSH	HL
-		LD	HL,cmd_cipmode	
+		LD	HL,cmd_cipmode
 		CALL	send_cmd
 		POP	HL
 		JP	wait_status
@@ -284,7 +284,7 @@ open_tcp	PUSH	HL
 		INC	HL
 		LD	(HL),B
 		POP	HL
-		PUSH	HL		;----------------- работаем	
+		PUSH	HL		;----------------- работаем
 		PUSH	DE
 		EX 	DE,HL		;HL=<host>,0,<port>,0
 		PUSH	HL
@@ -386,7 +386,7 @@ ping1		LDI				;Копируем адрес
 		JP	wait_status
 
 ;-- Отправить данные ----------------------------------------------------------------
-;i : HL - буфер для операций. 
+;i : HL - буфер для операций.
 ;  : DE - буфер с данными
 ;  : A - <ID>
 ;  : BC - размер
@@ -410,7 +410,7 @@ send		PUSH	HL
 		POP	HL
 		_bc_dec_hl		;"напечатать в буфер размер
 		POP	HL
-		CALL	send_cmd	
+		CALL	send_cmd
 		POP	DE
 		POP	HL
 		PUSH	HL
@@ -430,7 +430,7 @@ send1		LD	A,(DE)		;Отправить <BC> байт в порт
 		JP	wait_status
 
 ;-- Принять данные ------------------------------------------------------------------
-;i : HL - буфер для операций. 
+;i : HL - буфер для операций.
 ;o : HL - указатель на сообщение
 ;  :  A - 0 - OK, 1- ERROR
 ;AT+IPD
