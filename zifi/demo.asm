@@ -72,7 +72,7 @@ ISREND	DEPHASE
 
 ; Fatal error routine. We could print
 ; a message here but we just halt.
-SYSERR:	
+SYSERR:
 	LD	A,2
 	OUT	(254),A
 	DI

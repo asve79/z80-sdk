@@ -408,7 +408,7 @@ send		PUSH	HL
 		INC	HL
 		PUSH	BC
 		POP	HL
-		_bc_dec_hl		;"напечатать в буфер размер
+;		_bc_dec_hl		;"напечатать в буфер размер
 		POP	HL
 		CALL	send_cmd
 		POP	DE
