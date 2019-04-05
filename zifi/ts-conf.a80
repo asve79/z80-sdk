@@ -152,6 +152,44 @@ ptr		DW	0		;Указатель на начало проверяемого блока
 connections	DB	0		;кол-во открытых соединений
 registry	DS	5*9,0		;Реестр с форматом <id><адрес_буфреа><максимальный размер буфера>
 
+;http://wikiti.brandonw.net/index.php?title=Z80_Routines:Other:DispHL
+;Number in de to decimal ASCII on HL
+;Thanks to z80 Bits
+;inputs:
+; de = number
+; hl = bufer to write
+;example: hl=300 outputs '00300'
+;destroys: af, bc, hl, de used
+de_dec_hl
+	PUSH	AF
+	PUSH	BC
+	PUSH	DE
+	PUSH	HL
+	EX	HL,DE
+	ld	bc,-10000
+	CALL	Num1
+	ld	bc,-1000
+	CALL	Num1
+	ld	bc,-100
+	CALL	Num1
+	ld	c,-10
+	CALL	Num1
+	ld	c,-1
+Num1:	ld	a,'0'-1
+Num2:	inc	a
+	add	hl,bc
+	jr	c,Num2
+	sbc	hl,bc
+	EX	DE,HL
+	LD	(HL),A
+	INC	HL
+	EX	DE,HL
+	POP	HL
+	POP	DE
+	POP	DE
+	POP	AF
+	RET
+
 ;Отправить команду
 ;i: HL - command
 send_cmd	LD	A,(HL)
@@ -192,7 +230,7 @@ init		PUSH	HL
 
 
 ;------------------------------------------------------------------------------------
-;i : HL - буфек для операций
+;i : HL - буфер для операций
 ;o : HL - указатель на сообщение
 ;  :  A - 0 - OK, 1- ERROR
 list_ap		PUSH	HL
@@ -202,7 +240,7 @@ list_ap		PUSH	HL
 		JP	wait_status
 
 ;-- Показать текущий IP -------------------------------------------------------------
-;i : HL - буфек для операций
+;i : HL - буфер для операций
 ;o : HL - указатель на сообщение
 ;  :  A - 0 - OK, 1- ERROR
 current_ip	PUSH	HL
@@ -212,7 +250,7 @@ current_ip	PUSH	HL
 		JP	wait_status
 
 ;-- Подключиться к AP ---------------------------------------------------------------
-;i : HL - буфек для операций
+;i : HL - буфер для операций
 ;  : DE - ssid,0,pass,0
 ;o : HL - указатель на сообщение
 ;  :  A - 0 - OK, 1- ERROR
@@ -246,7 +284,7 @@ cap2		LDI				;Копируем пароль
 
 
 ;--- отключиться от точки доступа ---------------------------------------------------
-;i : HL - буфек для операций
+;i : HL - буфер для операций
 ;o : HL - указатель на сообщение
 ;  :  A - 0 - OK, 1- ERROR
 disconnect_ap	PUSH	HL
@@ -356,7 +394,7 @@ close_tcp	PUSH	HL
 		JP	wait_status
 
 ;-- PING адреса ---------------------------------------------------------------------
-;i : HL - буфек для операций
+;i : HL - буфер для операций
 ;  : DE - addr,0
 ;o : HL - указатель на сообщение
 ;  :  A - 0 - OK, 1- ERROR
@@ -408,7 +446,11 @@ send		PUSH	HL
 		INC	HL
 		PUSH	BC
 		POP	HL
-;		_bc_dec_hl		;"напечатать в буфер размер
+		PUSH	DE
+		PUSH 	BC
+		POP	DE
+		CALL	de_dec_hl		;напечатать в буфер размер
+		POP	DE
 		POP	HL
 		CALL	send_cmd
 		POP	DE

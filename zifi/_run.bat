@@ -38,12 +38,7 @@ rem # sudo cp $i /mnt/tmp/WC
 rem #done
 rem #sudo umount /mnt/tmp
 
-echo "run1"
-
-
 cd %unreal_path%
-
-echo "run"
 
 if exist %unreal%\%labels% (
  %unreal% -l%here%\%labels% %here%\%prog%
