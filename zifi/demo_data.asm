@@ -41,7 +41,7 @@ msg_keys
 	DB '"help" - for command list',13
 	DB '----------------------------',13,13,0
 
-msg_help 
+msg_help
 	DB 13,13,'Commands:'
         DB 13,'---------'
 	DB 13,'Keys:'
@@ -64,13 +64,24 @@ msg_scanap	DB	"Scan avalible AP's", 13,0
 msg_connect_ap	DB	"Connecting to AP", 13,0
 msg_disconnect_ap
 		DB	"Disconnect AP", 13,0
+msg_sendrequest	DB	"Send request",13,0
+msg_recevedata	DB	"Receve data",13,0
 
-msg_ping_ya_ru	DB	"Ping yandex.ru for test",13,0
-addr_ya		DB	"yandex.ru",0	; \ for test ping and connect 
+
+msg_ping_ya_ru	DB	"Ping www.tutorialspoint.com for test",13,0
+addr_ya		DB	"www.tutorialspoint.com",0	; \ for test ping and connect
 port_ya		DB	"80",0		; /
 
 msg_openconn_1	DB	"Open connection 1",13,0
 msg_closeconn_1	DB	"Close connection 1",13,0
+
+data_request	DB	"GET /hello.htm HTTP/1.1",13,10
+		DB	"User-Agent: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)",13,10
+		DB	"Host: www.tutorialspoint.com",13,10
+		DB	"Accept-Language: en-us",13,10
+		DB	"Accept-Encoding: gzip, deflate",13,10
+
+data_request_len	EQU	$-data_request
 
 mode		DB 0
 inc_addr 	DB 0

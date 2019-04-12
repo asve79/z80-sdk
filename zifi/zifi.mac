@@ -50,8 +50,7 @@
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_send buf
-	LD	HL,buf
+	MACRO	_zifi_send
 	CALL	zifi.send
 	ENDM
 

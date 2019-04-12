@@ -1,3 +1,4 @@
+;encoding cp1251
 	module main
 
 	include "../common/common.mac"
@@ -13,44 +14,47 @@
 	ENDIF
 
 credentials
-	DB	"ae-pio",0,"aewifi456",0
+	;DB	"ae-pio",0,"aewifi456",0
+	DB	"asve6s",0,"testtest",0
 
 ;- MAIN PROCEDURE -
-PROG	
+PROG
 	_printw wnd_main				;Основное окно
 	_prints	msg_keys				;Приветсвие
 	;_printcrlf
+	LD A,0						;Бордюр. цвет черный
+      	OUT (254),A
 ;	------------------------------------------
-	_prints msg_init
-	_fillzero input_bufer,#FF			
+P1	_prints msg_init
+	_fillzero input_bufer,#FF
 	_zifi_init input_bufer				;Инициализация
 	_prints input_bufer
 	_prints msg_separator
 ;	------------------------------------------
 ;	_prints msg_scanap
-;	_zifi_list_ap input_bufer			;Списов точек доступа
+;	_zifi_list_ap input_bufer			;Список точек доступа
 ;	_prints input_bufer
 ;	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_connect_ap
-	_fillzero input_bufer,#FF			
+	_fillzero input_bufer,#FF
 	_zifi_connect_ap input_bufer, credentials	;Подключиться к точке доступа
 	_prints input_bufer
 	_prints msg_separator
 ;	------------------------------------------
-	_fillzero input_bufer,#FF			
-	_zifi_current_ip input_bufer			;Показать текущий IP
-	_prints input_bufer
-	_prints msg_separator
+;	_fillzero input_bufer,#FF
+;	_zifi_current_ip input_bufer			;Показать текущий IP
+;	_prints input_bufer
+;	_prints msg_separator
 ;	------------------------------------------
-	_prints msg_ping_ya_ru
-	_fillzero input_bufer,#FF			
-	_zifi_ping input_bufer, addr_ya			;Пингануть хост яндекса
-	_prints input_bufer
-	_prints msg_separator
+;	_prints msg_ping_ya_ru
+;	_fillzero input_bufer,#FF
+;	_zifi_ping input_bufer, addr_ya			;Пингануть хост яндекса
+;	_prints input_bufer
+;	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_openconn_1
-	_fillzero input_bufer,#FF	
+	_fillzero input_bufer,#FF
 	_fillzero rcv_bufer,#FF
 	_fillzero rcv_bufer+#FF,#FF
 	_fillzero rcv_bufer+#1FF,#FF
@@ -58,20 +62,31 @@ PROG
 	_prints input_bufer
 	_prints msg_separator
 ;	------------------------------------------
+	_prints msg_sendrequest				;отправить данные
+	LD	A,1
+	LD	HL,input_bufer
+	LD	DE,data_request
+	LD	BC,data_request_len
+	_zifi_send
+
+
+;	------------------------------------------
+;	_prints msg_recevedata				;принять данные
+;	------------------------------------------
 	_prints msg_closeconn_1
 	_fillzero input_bufer,#FF
-	LD	A,1					;Номер канала	
+	LD	A,1					;Номер канала
 	_zifi_close_tcp input_bufer			;Закрыть соединение 1
 	_prints input_bufer
 	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_disconnect_ap
-	_fillzero input_bufer,#FF			
+	_fillzero input_bufer,#FF
 	_zifi_disconnect_ap input_bufer			;Отключиться от AP
 	_prints input_bufer
 	_prints msg_separator
 ;	------------------------------------------
-	
+
 	LD	A,'>'
 	_printc
 
@@ -97,9 +112,9 @@ mloop   ;CALL	check_rcv
 	CP	#18		;down cursor key pressed
 	JZ	mloop
 	CP	01Ch		;if Ss+W pressed - terminal command
-	JZ	opencmdmode	
+	JZ	opencmdmode
 	CP	#7F		;//delete key pressed
-	JZ	delsymtermmode	
+	JZ	delsymtermmode
 	CP	13		;//enter key pressed
 	JZ	enterkeytermmode
 	CALL	puttotermbufer	;//put char to command bufer and print
@@ -122,7 +137,7 @@ cmdmodeproc ;process comman mode
 	CP	01Ch		;if Ss+W pressed - terminal command
 	JZ	closecmdmode
 	CP	#7F		;//delete key pressed
-	JZ	delsymcmdmode	
+	JZ	delsymcmdmode
 	CP	13		;//enter key pressed
 	JZ	enterkeycmdmode
 	CALL	puttocmdbufer	;//put char to terminal bufer and print
@@ -140,7 +155,7 @@ opencmdmode ;open command window
 closecmdmode ;close the commend window
 	XOR	A
 	LD	(mode),A
-	_cur_off		
+	_cur_off
 	_endw
 	_cur_on
 	JP	mloop
@@ -215,7 +230,7 @@ puttobufer	;main procedure for put to bufer;TODO make insert mode with shift con
 	_printc		;out characte
 	RET
 
-exit	_cur_off		
+exit	_cur_off
 	_closew
 	RET
 

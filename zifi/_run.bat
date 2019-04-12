@@ -40,7 +40,7 @@ rem #sudo umount /mnt/tmp
 
 cd %unreal_path%
 
-if exist %unreal%\%labels% (
+if exist %here%\%labels% (
  %unreal% -l%here%\%labels% %here%\%prog%
 ) else (
  %unreal% %here%\%prog%
