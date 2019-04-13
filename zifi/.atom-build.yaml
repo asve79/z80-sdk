@@ -1,8 +1,8 @@
 cmd: "_make.bat"
-name: "make"
+name: "Make"
 sh: true
 errorMatch:
  - (?<file>[0-9a-zA-Z._-]+)\((?<line>\d+)\):\serror:\s(?<message>.*)
 targets:
-  extraTargetName:
+  Run:
       cmd: "_run.bat"

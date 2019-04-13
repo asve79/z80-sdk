@@ -37,7 +37,6 @@ msg_keys
         DB "Kondratiev's UART theme",13,13
 	ENDIF
         DB 'Press SS+Q for exit.',13
-        DB 'Press SS+W for command menu',13
 	DB '"help" - for command list',13
 	DB '----------------------------',13,13,0
 
@@ -80,6 +79,9 @@ data_request	DB	"GET /hello.htm HTTP/1.1",13,10
 		DB	"Host: www.tutorialspoint.com",13,10
 		DB	"Accept-Language: en-us",13,10
 		DB	"Accept-Encoding: gzip, deflate",13,10
+
+msg_cmd_error	DB	'Command result error',13,0
+msg_cmd_timeout	DB	'Command execution timeout',13,0
 
 data_request_len	EQU	$-data_request
 

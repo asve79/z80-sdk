@@ -1,42 +1,60 @@
 		module zifi
 
+pCMOS_ADDR	EQU	#DFF7
+pCMOS_DATA	EQU	#BFF7
+pCMOS_CONF	EQU	#EFF7
+
 ;------------------------------------------------------------------------------------
 ;Вспомогательные модуля
 ;------------------------------------------------------------------------------------
 ;Ожидание статуста выполнения команды и вывод кода. TODO: Обработка таймаута
 ;i:
 ; HL - bufer
-;o: A=0 - ok A=1 - ERROR
+;o: A=0 - OK
+;   A=1 - ERROR
+;   A=2 - TIMEOUT
 wait_status	DI
 		PUSH	BC
 		PUSH	DE
 		PUSH	HL
 		LD	(ptr),HL
 		DEC	HL
-		LD	BC,0000				;����稪
-ws2;		PUSH	BC
-;		PUSH	DE
-;		PUSH	HL
-;		_hl_hex
-;		PUSH	BC
-;		POP	HL
-;		_hl_hex
-;		LD	A,13
-;		_printc
-;		POP	HL
-;		POP	DE
-;		POP	BC
-
-		CALL	uart_ts_zifi.rx_fifo_cnt
+		call	getRTCsec
+		DEC	A
+		CP	#FF
+		JR	NZ,ws19
+		LD	A,59
+ws19		LD	(bsecond),A			;откуда начался отсчет. нужно для контролья перехода 59->0
+		;PUSH	AF
+		;_a_hex
+		;POP	AF
+		LD	b,a
+		LD	A,(timeout)
+		ADD	B	 			;добавим к значению сколько секунд ждем
+		LD	(sectimeout),A			;Вычислили значение после которого считаем что наступил таймаут
+		;_a_hex
+		LD	BC,0000				;????????
+		JR	ws2
+ws20		NOP					;Основной цикл
+		call	getRTCsec			;берем текущее значение секунд
+		;_a_hex
+		PUSH	BC
+		LD	B,A
+		LD	A,(bsecond)
+		CP	B
+		JR	C,ws21				;если A(bsecond) < B(current seconds) то перескока 59-0 небыло
+		LD	A,B
+		add	60
+		LD	B,A
+ws21		LD	A,(sectimeout)			;а теперь проверяем на таймаут
+		CP	B
+		JR	C,ws_timeout			;если A(timeout marker) < B(current seconds + corrector) то значит наступил таймаут
+		POP	BC
+ws2		CALL	uart_ts_zifi.rx_fifo_cnt
 		OR	A
-		JR	Z,ws2				;wait data
-;		LD	A,"r"
-;		_printc
+		JR	Z,ws20				;wait data
 		CALL	uart_ts_zifi.read_fifo_byte	;read byte
 		LD	(HL),A
-;		PUSH	AF
-;		_printc
-;		POP	AF
 		INC	HL
 		INC	BC
 		CP	10				;if end-of-line (code 13)
@@ -71,14 +89,21 @@ ws8		POP	HL
 		POP	BC
 		EI
 		RET
+ws_timeout	POP	BC
+		LD	A,2				;TIMEOUT
+		JR	ws8
+
+sectimeout	DB	0				;Значение секунд которое будет считаться наступлением таймаута
+bsecond		DB	0				;начальные секунды
+timeout		DB	10				;таймаут операции в секундах
 ;i:
-; (ptr) - буфер
-; DL - � 祬 �ࠢ������
-; BC - ᪮�쪮 ᨬ����� �ࠢ������
+; (ptr) - казатель на буфер
+; DL - эталон, с которым сравниваем
+; BC - длина строки
 ;o:
 ; A:
-; 0 - �� �������
-; 1 - �������
+; 0 - не совпал
+; 1 - совал
 check_status	PUSH	HL
 		LD	HL,(ptr)
 ;		PUSH	HL
@@ -158,39 +183,70 @@ registry	DS	5*9,0		;реестр соединений <id><адрес буфер
 ;inputs:
 ; de = number
 ; hl = bufer to write
-;example: hl=300 outputs '00300'
+;example: de=300 outputs '00300'
 ;destroys: af, bc, hl, de used
-de_dec_hl
-		PUSH	AF
+de_dec_hl_save	PUSH	AF
 		PUSH	BC
 		PUSH	DE
 		PUSH	HL
-		EX	HL,DE
-		ld	bc,-10000
-		CALL	Num1
-		ld	bc,-1000
-		CALL	Num1
-		ld	bc,-100
-		CALL	Num1
-		ld	c,-10
-		CALL	Num1
-		ld	c,-1
-Num1:		ld	a,'0'-1
-Num2:		inc	a
-		add	hl,bc
-		jr	c,Num2
-		sbc	hl,bc
-		EX	DE,HL
-		LD	(HL),A
-		INC	HL
-		EX	DE,HL
+		CALL	de_dec_hl
 		POP	HL
 		POP	DE
 		POP	BC
 		POP	AF
 		RET
+de_dec_hl	EX	DE,HL
+		LD	(de_pos),HL
+		ld	bc,-10000
+		call	Num1
+		ld	bc,-1000
+		call	Num1
+		ld	bc,-100
+		call	Num1
+		ld	c,-10
+		call	Num1
+		ld	c,-1
+Num1		ld	a,'0'-1
+Num2		inc	a
+		add	hl,bc
+		jr	c,Num2
+		sbc	hl,bc
+		call 	PUTCHAR
+		RET
+de_pos		DW	0
+PUTCHAR		PUSH	HL
+		LD	HL,(de_pos)
+		LD	(HL),A
+		INC	HL
+		LD	(HL),A
+		POP	HL
+		RET
 
-;отправить команды из буфера
+;- Взять значение секунд (для отслеживания таймаутов)
+;o: a - seconds
+getRTCsec 	PUSH	bc
+		ld	a,#80
+		ld	bc,pCMOS_CONF
+		out	(c),a
+
+		ld	a,#0B
+		ld	b,high pCMOS_ADDR
+		out	(c),a
+		ld	a,#82
+		ld	b,high pCMOS_DATA
+		out	(c),a
+;- seconds -
+		ld	a,#00
+		ld	b,high pCMOS_ADDR
+		out	(c),a
+		ld	b,high pCMOS_DATA
+		in	a,(c)
+		POP	bc
+		ret
+
+
+;-------------------------------------------------------------------------------
+;отправить команду из буфера
 ;i: HL - command
 send_cmd	LD	A,(HL)
 		OR	A
@@ -203,16 +259,17 @@ send_cmd	LD	A,(HL)
 		INC	HL
 		JR	send_cmd
 
-;------------------------------------------------------------------------------------
+;-------------------------------------------------------------------------------
 ;o:
 ; A=0 - OK
 ; A=1 - ERROR
 init		PUSH	HL
+		LD	A,10
+		LD	(timeout),A
 		CALL	uart_ts_zifi.init
 		OR	A
 		POP	HL
-		RET	NZ
-		CALL	uart_ts_zifi.clea
+		RET	NZ			;retrun if error
 		CALL	uart_ts_zifi.clear_output_fifo
 		CALL	uart_ts_zifi.clear_input_fifo
 		PUSH	HL
@@ -220,6 +277,8 @@ init		PUSH	HL
 		CALL	send_cmd
 		POP	HL
 		CALL	wait_status
+		OR	A
+		RET	NZ			;retrun if error
 		PUSH	HL
 		LD	HL,cmd_cipmux		;Включение множественного соединения
 		CALL	send_cmd
@@ -231,10 +290,9 @@ init		PUSH	HL
 ;		POP	HL
 		JP	wait_status
 
-
 ;------------------------------------------------------------------------------------
-;i : HL - ����� ��� �����権
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;i : HL - бевер для операций
+;o : HL - результат выполнения операции
 ;  :  A - 0 - OK, 1- ERROR
 list_ap		PUSH	HL
 		LD	HL,cmd_cwlap
@@ -242,9 +300,9 @@ list_ap		PUSH	HL
 		POP	HL
 		JP	wait_status
 
-;-- �������� ⥪�騩 IP -------------------------------------------------------------
-;i : HL - ����� ��� �����権
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;-- показать текущий IP -------------------------------------------------------------
+;i : HL - бевер для операций
+;o : HL - результат выполнения операции
 ;  :  A - 0 - OK, 1- ERROR
 current_ip	PUSH	HL
 		LD	HL,cmd_cifsr
@@ -252,33 +310,33 @@ current_ip	PUSH	HL
 		POP	HL
 		JP	wait_status
 
-;-- ������������ � AP ---------------------------------------------------------------
-;i : HL - ����� ��� �����権
+;-- Вывести список AP ---------------------------------------------------------------
+;i : HL - буфер для операций
 ;  : DE - ssid,0,pass,0
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;o : HL - результат выполнения операции
 ;  :  A - 0 - OK, 1- ERROR
 connect_ap	PUSH 	HL
 		EX 	DE,HL
 		PUSH	HL
-		LD	HL,cmd_cwjap		;�����㥬 ������� AT+CWJAP="
+		LD	HL,cmd_cwjap		;отправка команды AT+CWJAP="
 		LD	BC,10
 		LDIR
 		POP	HL			;HL=<ssid>,0,<pass>,0
-cap1		LDI				;�����㥬 SSID
+cap1		LDI				;копируем SSID
 		LD	A,(HL)
 		OR	A
 		JR	NZ,cap1
 		INC	HL
 		PUSH	HL
-		LD	HL,cmd_quetesp		;�����㥥� ࠧ�����쥫� ","
+		LD	HL,cmd_quetesp		;копируем разделитель ","
 		LD	BC,3
 		LDIR
 		POP	HL			;HL=<pass>,0
-cap2		LDI				;�����㥬 ��஫�
+cap2		LDI				;копируем пароль
 		LD	A,(HL)
 		OR	A
 		JR	NZ,cap2
-		LD	HL,cmd_quetesend	;�����㥬 ����������� ��ப� ",13,10,0
+		LD	HL,cmd_quetesend	;копируем завершение строки ",13,10,0
 		LD	BC,4
 		LDIR
 		POP	HL
@@ -300,7 +358,7 @@ disconnect_ap	PUSH	HL
 ;-- Открыть TCP соединение ----------------------------------------------------------
 ;i : HL - буфер для операций
 ;  : DE - address,0,port,0
-;  : DE` - адрес буфера, куда будут приходить данные по соединению. 
+;  : DE` - адрес буфера, куда будут приходить данные по соединению.
 ;  : BC - размер буфера
 ;o : HL - результат
 ;  :  A - 0-9 - Connection ID, #FF - ERROR
@@ -366,13 +424,15 @@ ot2		LDI				;часть команды
 ;		POP	DE
 ;		POP	HL
 		CALL	wait_status
+		OR	A
+		JR	NZ,ot_err
 		;* TODO работа с реестром
 		OR	A
-		JR	NZ,oterr
+		JR	NZ,ot_err
 		LD	A,1			;DUMMY
 						;тут надо выделять ID соединению
 		RET
-oterr		LD	A,#FF			;ERROR
+ot_err		LD	A,#FF			;ERROR
 		RET
 
 ;-- Закрыть TCP соединение ----------------------------------------------------------
@@ -453,7 +513,7 @@ send		PUSH	HL
 		EX	DE,HL
 		PUSH	BC
 		POP	DE
-		CALL	de_dec_hl		;перевести число в строку. Размер блока данных DE -> string -> (HL)
+		CALL	de_dec_hl_save		;перевести число в строку. Размер блока данных DE -> string -> (HL)
 		POP	DE
 		POP	HL
 		CALL	send_cmd
