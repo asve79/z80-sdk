@@ -175,7 +175,7 @@ msg_ok		DB	10,'OK',13,10
 msg_error	DB	10,'ERROR',13,10
 ptr		DW	0		;указатель
 connections	DB	0		;счетчик соединений
-registry	DS	5*9,0		;реестр соединений <id><адрес буфера><максимальный размер буфера>
+registry	DS	10*(1+2+3+2),0	;реестр соединений <id><адрес буфера><максимальный размер буфера><смещение в буфере для записи данных>
 
 ;http://wikiti.brandonw.net/index.php?title=Z80_Routines:Other:DispHL
 ;Number in de to decimal ASCII on HL
@@ -266,6 +266,11 @@ send_cmd	LD	A,(HL)
 init		PUSH	HL
 		LD	A,10
 		LD	(timeout),A
+		LD	HL,registry
+		LD	(HL),#FF
+		LD	DE,registry+1
+		LD	BC,10*(1+2+2+2)-1	;возможно 10 (0-9) соединений (формат реестра: ID, addr_buf, size_buf, ptr)
+		LDIR				;Заполнить реестр символами #FF
 		CALL	uart_ts_zifi.init
 		OR	A
 		POP	HL
@@ -545,6 +550,36 @@ send1		LD	A,(DE)		;отправить данные в порт. В <BC> разм
 		POP	DE
 		POP	HL
 		JP	wait_status
+
+;-------------------------------------------------------------------------------
+;Добавить соединение. Просто зарегистрировет параметры, без выделения ID
+add_connection
+		RET
+
+;Назначить ID соединению, данные которого были записаны в первую область с FF
+get_id_connection
+		RET
+
+;Освободить ID 	(найдет и забьет его #FF-кой)
+free_id
+		RET
+
+;Записать данные в буфер по ID. Пишет в буфер увеличивает ptr
+putdata
+		RET
+
+;Получить адрес буфера по ID
+getbuferaddr
+		RET
+
+;Получить заполненность буфера по ID
+getdatasize
+		RET
+
+;Сбросить указатель буфера по ID
+resetptr
+		RET
+
 
 ;-- Принять данные ------------------------------------------------------------------
 ;i : HL - буфер для операций.
