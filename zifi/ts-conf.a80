@@ -175,7 +175,7 @@ msg_ok		DB	10,'OK',13,10
 msg_error	DB	10,'ERROR',13,10
 ptr		DW	0		;указатель
 connections	DB	0		;счетчик соединений
-registry	DS	10*(1+2+3+2),0	;реестр соединений <id><адрес буфера><максимальный размер буфера><смещение в буфере для записи данных>
+registry	DS	10*(1+2+2+2),0	;реестр соединений <id><адрес буфера><максимальный размер буфера><смещение в буфере для записи данных>
 
 ;http://wikiti.brandonw.net/index.php?title=Z80_Routines:Other:DispHL
 ;Number in de to decimal ASCII on HL
@@ -551,35 +551,225 @@ send1		LD	A,(DE)		;отправить данные в порт. В <BC> разм
 		POP	HL
 		JP	wait_status
 
+;--- реестр соединений -
+;	descriptor[1]	+0	- дескриптор
+;	bufer_addr[2]	+1	- адрес буфера
+;	bufer_size[2]	+3	- крайний адрес буфера, до которого можно писать даныне (bufer_addr + размер буфера)
+;	offset[2]	+5	- адрес первой ячейки буфера куда можно писать данные (bufer_addr+ptr)
+
 ;-------------------------------------------------------------------------------
 ;Добавить соединение. Просто зарегистрировет параметры, без выделения ID
+;i :
+;  : DE` - адрес буфера, куда будут приходить данные по соединению.
+;  : BC - размер буфера
+;o : A = 0 - OK, 1 - ERROR
 add_connection
+		PUSH	HL
+		PUSH	BC
+		LD	B,0		;счетчик
+		LD	HL,registry
+a_conn1		LD	A,(HL)
+		CP	#FF		;смотрим свободный слот или нет (FF - свободен)
+		JR	Z, a_conn2
+		INC	B
+		LD	A,B
+		CP	10		;проверка что не больше 10 (0-9)
+		JR	NZ,a_conn1
+		LD	A,1
+		POP	BC
+		POP	HL
+		RET
+a_conn2		POP	BC		;Тут уже пишем в реестр
+		PUSH	IX
+		PUSH	HL
+		POP	IX
+		EXX
+		PUSH	DE
+		EXX
+		POP	DE
+		LD	(IX+1),D	;адрес буфера
+		LD	(IX+2),E
+		LD	(IX+5),D	;смещение для записи данных = адресу буфера
+		LD	(IX+6),E
+		ADD	HL,BC
+		LD	(IX+3),H	;размер буфера + адрес буфера (максимальный адрес, куда писать уже нельзя)
+		LD	(IX+4),L
+		XOR	A
+		POP	IX
+		POP	HL
 		RET
 
 ;Назначить ID соединению, данные которого были записаны в первую область с FF
+;o: A = (0-9) descriptor or #FF - error
 get_id_connection
+		PUSH	BC
+		PUSH	DE
+		PUSH	HL
+		LD	HL,registry
+		LD	B,0
+		LD	DE,9
+gic1		LD	A,(HL)
+		CP	#FF		;искать первый свободный слот (отмечен FF)
+		JR	Z,gic3
+		LD	A,B
+		CP	10		;проверка что не вышли за 10 дескрипторов
+		JR	Z,gic4
+		ADD	HL,DE
+		INC	B
+		JR	gic1
+gic3		LD	(HL),B		;назначить идентификатор в реестре
+		LD	A,B		;вернуть идентификатор в A
+		POP	HL
+		POP	DE
+		POP	BC
 		RET
+gic4		LD	B,#FF		;Если больше 10 циклов, значит свободного дискриптора нет
+		JR	gic3
 
 ;Освободить ID 	(найдет и забьет его #FF-кой)
-free_id
+;i : A = descriptor
+free_id		PUSH	AF
+		PUSH	HL
+		CALL	retreqaddr
+		LD	A,#FF
+		LD	(HL),A
+		POP	HL
+		POP	AF
 		RET
 
 ;Записать данные в буфер по ID. Пишет в буфер увеличивает ptr
-putdata
+;также проверит нет ли переполнения буфера
+;i  : A  - desctiptor
+;   : HL - ptr to bufer with data
+;   : BC - length
+;o  :  A - descriptor(0-9) - OK, OR #FF - ERROR (Not found or owerflow)
+;   : BC - сколько было записано
+putdata		PUSH	DE		;(*1)общее сохранение
+		PUSH	HL
+		PUSH	IX
+		EX	DE,HL		;Тпереь в DE адрес откуда будем читать
+		CALL	retreqaddr
+		LD	A,(HL)
+		PUSH	AF		;(*2) фиксируем дескриптор
+		CP	#FF		;проверим есть ли дескриптор
+		JR	NZ,putdata1
+		LD	BC,0		;если нет десктриптора то выходим и говорим что записали 0 байт
+		JR	putdat_ex
+putdata1	PUSH	HL
+		POP	IX		;IX = адрес записи в registry, DE - откуда будем читать BC - сколько писать
+		LD	H,(IX+5)
+		LD	L,(IX+6)	;В HL = адрес, куда будем писать
+		PUSH	HL		;(*3) запомним адрес
+		ADD	HL,BC		;в HL адрес куда попадем если запишем столько, сколько хочется
+		XOR	A
+		LD	(putdat_owerflow),A	;признак переполнения
+		LD	A,L
+		SUB	(IX+4)
+		JR	NC,putdata2
+		LD	(putdat_owerflow),A
+		DEC	H
+putdata2	LD	A,H
+		SUB	(IX+3)
+		JR	NC,putdata3
+		LD	(putdat_owerflow),A
+putdata3	LD	A,(putdat_owerflow)
+		OR	A
+		JR	NZ,putdata7	; если было переполнение то можем писать столько, сколько хотели (желаемый меньше максимального)
+;		XOR	A		; если небыло (желаемый оказался больше максимального). теперь в HL на сколько мы его превысили
+;		LD	(putdat_owerflow),A; обнулимся
+		LD	A,C		;теперь из BC вычтем полученную дельту (склько не межем запихнуть в буфер)
+		SUB	L
+		JR	NC,putdata4
+		DEC	H
+putdata4	LD	A,H
+		SUB	B
+putdata7	POP	HL		;(*3) вспомним куда писать
+		PUSH	BC		;(*3) запомним сколько записали байт
+		LDIR
+		LD	(IX+5),H	;Запоминим куда писали данные
+		LD	(IX+6),L
+		POP	BC		;(*3) вспомним чтобы вернуть
+putdat_ex	POP	AF		;(*2) вспомнить статус
+		POP	IX		;(*1) восстановление попорченного
+		POP	HL
+		POP	DE
 		RET
+putdat_owerflow	DB	0
 
 ;Получить адрес буфера по ID
-getbuferaddr
+;i: A - descriptor
+;o: HL - bufer
+;    A - descriptor(0-9) - OK, OR #FF - ERROR (Not found, alredy released)
+getbuferaddr	PUSH	DE
+		PUSH	HL
+		CALL	retreqaddr
+		LD	A,(HL)		;запомним ID, даже если FF все равно вернем адрес
+		PUSH	AF
+		INC	HL
+		LD	D,(HL)
+		INC	HL
+		LD	E,(HL)
+		EX	DE,HL
+		POP	AF
+		POP	HL
+		POP	DE
 		RET
 
-;Получить заполненность буфера по ID
-getdatasize
+;Получить адрес куда можно писать данные по ID
+;i: A - descriptor
+;o: HL - address to write
+;    A - descriptor(0-9) - OK, OR #FF - ERROR (Not found, alredy released)
+getdataptr	PUSH	HL
+		PUSH	DE
+		CALL	retreqaddr
+		LD	A,(HL)		;запомним ID, даже если FF все равно вернем адрес
+		PUSH	AF
+		LD	BC,5
+		ADD	HL,BC		;смещаемся на указатель смещения в буфере
+		LD	D,(HL)
+		INC	HL
+		LD	E,(HL)
+		EX	DE,HL
+		POP	AF
+		POP	DE
+		POP	HL
 		RET
 
 ;Сбросить указатель буфера по ID
-resetptr
+;Указатель куда можно писать данные будет указывать на начало буфера
+;i: A - descriptor
+;    A - descriptor(0-9) - OK, OR #FF - ERROR (Not found, alredy released)
+resetptr	PUSH	HL
+		CALL	retreqaddr
+		PUSH	IX
+		PUSH	HL
+		POP	IX
+		LD	A,(IX)		;запомним ID, даже если FF все равно заполним нулями
+		PUSH	AF
+		LD	A,(IX+1)
+		LD	(IX+5),A
+		LD	A,(IX+2)
+		LD	(IX+6),A
+		POP	AF
+		POP	IX
+		POP	HL
 		RET
 
+;вернуть указать на запись в реестре
+;i : A - desctiptor
+;o : HL - адрес записи в реестре
+retreqaddr	LD	HL,registry
+		OR	A
+		RET	Z
+		PUSH	BC
+		PUSH	DE
+		LD	DE,7
+		LD	B,A
+rra1		ADD	HL,DE
+		DJNZ	rra1
+		POP	DE
+		POP	BC
+		RET
 
 ;-- Принять данные ------------------------------------------------------------------
 ;i : HL - буфер для операций.
@@ -593,8 +783,6 @@ receve		PUSH	HL
 
 		POP	HL
 		RET
-
-
 
 		include	"commands.a80"
 		include "../sockets/uart_ts_zifi.a80"
