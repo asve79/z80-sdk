@@ -74,16 +74,20 @@ port_ya		DB	"80",0		; /
 msg_openconn_1	DB	"Open connection 1",13,0
 msg_closeconn_1	DB	"Close connection 1",13,0
 
+
+msg_cmd_error	DB	'Command result error',13,0
+msg_cmd_timeout	DB	'Command execution timeout',13,0
+msg_connction_id
+		DB	'Connection id:',0
+
+;- единый блок ----------------------------------------------------------
 data_request	DB	"GET /hello.htm HTTP/1.1",13,10
 		DB	"User-Agent: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)",13,10
 		DB	"Host: www.tutorialspoint.com",13,10
 		DB	"Accept-Language: en-us",13,10
 		DB	"Accept-Encoding: gzip, deflate",13,10
-
-msg_cmd_error	DB	'Command result error',13,0
-msg_cmd_timeout	DB	'Command execution timeout',13,0
-
 data_request_len	EQU	$-data_request
+;-----------------------------------------------------------
 
 mode		DB 0
 inc_addr 	DB 0

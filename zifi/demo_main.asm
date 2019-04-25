@@ -24,6 +24,7 @@ PROG
 	;_printcrlf
 	LD A,0						;Бордюр. цвет черный
       	OUT (254),A
+
 ;	------------------------------------------
 P1	_prints msg_init
 	_fillzero input_bufer,#FF
@@ -31,6 +32,7 @@ P1	_prints msg_init
 	PUSH	AF
 	_prints input_bufer
 	POP	AF
+	LD	B,0					;не отключаться от AP
 	CP	1
 	JZ	command_error
 	CP	2
@@ -43,6 +45,7 @@ P1	_prints msg_init
 	PUSH	AF
 	_prints input_bufer
 	POP	AF
+	LD	B,0					;не отключаться от AP
 	CP	1
 	JZ	command_error
 	CP	2
@@ -55,10 +58,11 @@ P1	_prints msg_init
 	PUSH	AF
 	_prints input_bufer
 	POP	AF
+	LD	B,0					;не отключаться от AP
 	CP	1
 	JZ	command_error
-	CP	2
-	JZ	command_timeout
+;	CP	2
+;	JZ	command_timeout				;пока не обрабатываем тут таймаут
 	_prints msg_separator
 ;	------------------------------------------
 ;	_fillzero input_bufer,#FF
@@ -81,22 +85,30 @@ P1	_prints msg_init
 	PUSH	AF
 	_prints input_bufer
 	POP	AF
-	CP	1
+	LD	B,1					;отключаться от AP
+	CP	#FF					;#FF значит не установилось соединение (пока нет определение причины отказа)
 	JZ	command_error
-	CP	2
-	JZ	command_timeout
 
+	PUSH	AF
+	_prints msg_connction_id			;вывести номер соединения
+	POP	AF
+	PUSH	AF					;Сохраняем ID соединения
+	_a_hex
+	_printcrlf
 	_prints msg_separator
 ;	------------------------------------------
+	_fillzero input_bufer,#FF
 	_prints msg_sendrequest				;отправить данные
-	LD	A,1
-	LD	HL,input_bufer
-	LD	DE,data_request
-	LD	BC,data_request_len
+	POP	AF					;идентификатор соединения
+	;LD	A,1
+	LD	HL,input_bufer				;буфер для операций и результата
+	LD	DE,data_request				;буфер с данными для отправки
+	LD	BC,data_request_len			;длина отправляемых данных
 	_zifi_send
 	PUSH	AF
 	_prints input_bufer
 	POP	AF
+	LD	B,1					;отключаться от AP
 	CP	1
 	JZ	command_error
 	CP	2
@@ -106,19 +118,20 @@ P1	_prints msg_init
 ;	------------------------------------------
 ;	_prints msg_recevedata				;принять данные
 ;	------------------------------------------
-	_prints msg_closeconn_1
-	_fillzero input_bufer,#FF
-	LD	A,1					;Номер канала
-	_zifi_close_tcp input_bufer			;Закрыть соединение 1
-	PUSH	AF
-	_prints input_bufer
-	POP	AF
-	CP	1
-	JZ	command_error
-	CP	2
-	JZ	command_timeout
+;	_prints msg_closeconn_1
+;	_fillzero input_bufer,#FF
+;	LD	A,1					;Номер канала
+;	_zifi_close_tcp input_bufer			;Закрыть соединение 1
+;	PUSH	AF
+;	_prints input_bufer
+;	POP	AF
+;	LD	B,1					;отключаться от AP
+;	CP	1
+;	JZ	command_error
+;	CP	2
+;	JZ	command_timeout
 
-	_prints msg_separator
+l1d	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_disconnect_ap
 	_fillzero input_bufer,#FF
@@ -163,12 +176,20 @@ mloop   ;CALL	check_rcv
 command_error
 	_prints	msg_cmd_error
 	_cur_on
-	JP	mloop
+	LD	A,B
+	OR	A
+	JP	Z,mloop
+	_cur_off
+	JP	l1d
 
 command_timeout
 	_prints	msg_cmd_timeout
 	_cur_on
-	JP	mloop
+	LD	A,B
+	OR	A
+	JP	Z,mloop
+	_cur_off
+	JP	l1d
 
 delsymtermmode	;delete symbol in terminal mode
 	_findzero input_bufer	;//get ptr on last symbol+1 in buffer

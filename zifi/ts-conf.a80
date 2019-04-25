@@ -1,5 +1,6 @@
 		module zifi
 
+
 pCMOS_ADDR	EQU	#DFF7
 pCMOS_DATA	EQU	#BFF7
 pCMOS_CONF	EQU	#EFF7
@@ -188,14 +189,9 @@ ptr		DW	0		;указатель
 connections	DB	0		;счетчик соединений
 registry	DS	10*(1+2+2+2),0	;реестр соединений <id><адрес буфера><максимальный размер буфера><смещение в буфере для записи данных>
 
-;http://wikiti.brandonw.net/index.php?title=Z80_Routines:Other:DispHL
-;Number in de to decimal ASCII on HL
-;Thanks to z80 Bits
 ;inputs:
 ; de = number
 ; hl = bufer to write
-;example: de=300 outputs '00300'
-;destroys: af, bc, hl, de used
 de_dec_hl_save	PUSH	AF
 		PUSH	BC
 		PUSH	DE
@@ -206,6 +202,14 @@ de_dec_hl_save	PUSH	AF
 		POP	BC
 		POP	AF
 		RET
+;http://wikiti.brandonw.net/index.php?title=Z80_Routines:Other:DispHL
+;Number in de to decimal ASCII on HL
+;Thanks to z80 Bits
+;inputs:
+; de = number
+; hl = bufer to write
+;example: de=300 outputs '00300'
+;destroys: af, bc, hl, de used
 de_dec_hl	EX	DE,HL
 		LD	(de_pos),HL
 		ld	bc,-10000
@@ -308,7 +312,7 @@ init		PUSH	HL
 ;		CP	3			;тепепрь ждем ready
 ;		RET	NZ			;если не READY значит фигня какая-то, выходим.
 ;		LD	A,'*'
-;		_printc		
+;		_printc
 		PUSH	HL
 		LD	HL,cmd_echooff		;выключить эхо
 		CALL	send_cmd
@@ -548,8 +552,8 @@ ping1		LDI
 send		PUSH	HL
 		PUSH	DE
 		PUSH	BC
-		EX 	DE,HL
 		PUSH	HL
+		EX 	DE,HL		;теперь в DE адрес куда пишем
 		LD	HL,cmd_cipsend	;команда AT+CIPSEND=
 		PUSH	BC
 		LD	BC,11
@@ -561,17 +565,27 @@ send		PUSH	HL
 		LD	A,','		;разделитель
 		LD	(DE),A
 		INC	DE
-		EX	DE,HL
 		PUSH	BC
-		POP	DE
-		CALL	de_dec_hl_save		;перевести число в строку. Размер блока данных DE -> string -> (HL)
-		POP	DE
+		POP	HL
+		CALL	_int2str
+		EX	DE,HL		;В HL сново буфер куда пишем
+		INC	HL
+		LD	(HL),13			;признак окончания
+		INC	HL
+		LD	(HL),10
+		INC	HL
+		LD	(HL),0
 		POP	HL
 		CALL	send_cmd
 		POP	BC
 		POP	DE
 		POP	HL
-sendw1		CALL	uart_ts_zifi.rx_fifo_cnt
+		CALL	wait_status
+		OR	A
+		RET	NZ
+		LD	A,"#"
+		_printc
+sendw1		CALL	uart_ts_zifi.rx_fifo_cnt	;теперь ждем приглашения на отправку данных (">")
 		OR	A
 		JR	Z,sendw1			;wait data
 		CALL	uart_ts_zifi.read_fifo_byte	;read byte
@@ -832,4 +846,5 @@ receve		PUSH	HL
 
 		include	"commands.a80"
 		include "../sockets/uart_ts_zifi.a80"
+		include "../strings/int2str.asm"
 		endmodule

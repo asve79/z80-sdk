@@ -8,6 +8,10 @@
         CALL    wind.PRINTS
 	ENDM
 
+	MACRO	_printstr_hl
+        CALL    wind.PRINTS
+	ENDM
+
 	MACRO	_endw
 	CALL	wind.ENDW
 	ENDM
@@ -33,6 +37,13 @@
 	CALL	wind.PRINTC
 	ENDM
 
+	MACRO	_printcrlf
+	PUSH	AF
+	LD	A,13
+	CALL	wind.PRINTC
+	POP	AF
+	ENDM
+
 	MACRO	_clearwindow
 	LD	A,31
 	CALL	wind.PRINTC
@@ -45,4 +56,3 @@
 	MACRO	_hl_hex
 	CALL	wind.HL_HEX
 	ENDM
-
