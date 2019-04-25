@@ -13,6 +13,7 @@ pCMOS_CONF	EQU	#EFF7
 ;o: A=0 - OK
 ;   A=1 - ERROR
 ;   A=2 - TIMEOUT
+;   A=3 - 'ready'
 wait_status	DI
 		PUSH	BC
 		PUSH	DE
@@ -71,6 +72,11 @@ wc4		LD	DE,msg_ok			;ПРоверка статуста ОК
 		CALL	check_status
 		OR	A
 		JR	NZ,ws6				;Если ERROR
+		LD	DE,msg_ready
+		LD	BC,8
+		CALL	check_status
+		OR	A
+		JR	NZ,ws9				;Если 'ready'
 		POP	BC
 		POP	HL				;Запоминаем позици идем дальше
 		DEC	HL
@@ -88,6 +94,10 @@ ws8		POP	HL
 		POP	DE
 		POP	BC
 		EI
+		RET
+ws9		POP	BC
+		POP	HL
+		LD	A,3				;ready
 		RET
 ws_timeout	POP	BC
 		LD	A,2				;TIMEOUT
@@ -173,6 +183,7 @@ cstat_nf	XOR	A
 
 msg_ok		DB	10,'OK',13,10
 msg_error	DB	10,'ERROR',13,10
+msg_ready	DB	10,'ready',13,10
 ptr		DW	0		;указатель
 connections	DB	0		;счетчик соединений
 registry	DS	10*(1+2+2+2),0	;реестр соединений <id><адрес буфера><максимальный размер буфера><смещение в буфере для записи данных>
@@ -279,6 +290,41 @@ init		PUSH	HL
 		CALL	uart_ts_zifi.clear_input_fifo
 		PUSH	HL
 		LD	HL,cmd_check		;Отправка команды "AT"
+		CALL	send_cmd
+		POP	HL
+		CALL	wait_status
+		OR	A
+		RET	NZ			;retrun if error
+		PUSH	HL
+;		LD	HL,cmd_reset		;перезапустить модуль
+;		CALL	send_cmd
+;		POP	HL
+;		CALL	wait_status
+;		OR	A
+;		RET	NZ			;retrun if error
+;		LD	A,'*'
+;		_printc
+;		CALL	wait_status
+;		CP	3			;тепепрь ждем ready
+;		RET	NZ			;если не READY значит фигня какая-то, выходим.
+;		LD	A,'*'
+;		_printc		
+		PUSH	HL
+		LD	HL,cmd_echooff		;выключить эхо
+		CALL	send_cmd
+		POP	HL
+		CALL	wait_status
+		OR	A
+		RET	NZ			;retrun if error
+		PUSH	HL
+		LD	HL,cmd_cwmode_cur	;Включение режима WIFI клиента
+		CALL	send_cmd
+		POP	HL
+		CALL	wait_status
+		OR	A
+		RET	NZ			;retrun if error
+		PUSH	HL
+		LD	HL,cmd_cwautoconn	;автоматическое подключение к AP выключить (пока)
 		CALL	send_cmd
 		POP	HL
 		CALL	wait_status

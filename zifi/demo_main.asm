@@ -38,10 +38,16 @@ P1	_prints msg_init
 
 	_prints msg_separator
 ;	------------------------------------------
-;	_prints msg_scanap
-;	_zifi_list_ap input_bufer			;Список точек доступа
-;	_prints input_bufer
-;	_prints msg_separator
+	_prints msg_scanap
+	_zifi_list_ap input_bufer			;Список точек доступа
+	PUSH	AF
+	_prints input_bufer
+	POP	AF
+	CP	1
+	JZ	command_error
+	CP	2
+	JZ	command_timeout
+	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_connect_ap
 	_fillzero input_bufer,#FF
