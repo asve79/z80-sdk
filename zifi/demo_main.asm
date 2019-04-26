@@ -39,18 +39,20 @@ P1	_prints msg_init
 	JZ	command_timeout
 
 	_prints msg_separator
+	CALL	sleep
+
 ;	------------------------------------------
-	_prints msg_scanap
-	_zifi_list_ap input_bufer			;Список точек доступа
-	PUSH	AF
-	_prints input_bufer
-	POP	AF
-	LD	B,0					;не отключаться от AP
-	CP	1
-	JZ	command_error
-	CP	2
-	JZ	command_timeout
-	_prints msg_separator
+;	_prints msg_scanap
+;	_zifi_list_ap input_bufer			;Список точек доступа
+;	PUSH	AF
+;	_prints input_bufer
+;	POP	AF
+;	LD	B,0					;не отключаться от AP
+;	CP	1
+;	JZ	command_error
+;	CP	2
+;	JZ	command_timeout
+;	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_connect_ap
 	_fillzero input_bufer,#FF
@@ -64,6 +66,8 @@ P1	_prints msg_init
 ;	CP	2
 ;	JZ	command_timeout				;пока не обрабатываем тут таймаут
 	_prints msg_separator
+	CALL	sleep
+
 ;	------------------------------------------
 ;	_fillzero input_bufer,#FF
 ;	_zifi_current_ip input_bufer			;Показать текущий IP
@@ -88,7 +92,6 @@ P1	_prints msg_init
 	LD	B,1					;отключаться от AP
 	CP	#FF					;#FF значит не установилось соединение (пока нет определение причины отказа)
 	JZ	command_error
-
 	PUSH	AF
 	_prints msg_connction_id			;вывести номер соединения
 	POP	AF
@@ -96,6 +99,7 @@ P1	_prints msg_init
 	_a_hex
 	_printcrlf
 	_prints msg_separator
+	CALL	sleep
 ;	------------------------------------------
 	_fillzero input_bufer,#FF
 	_prints msg_sendrequest				;отправить данные
@@ -108,28 +112,36 @@ P1	_prints msg_init
 	PUSH	AF
 	_prints input_bufer
 	POP	AF
-	LD	B,1					;отключаться от AP
+	LD	B,2					;закрыть соединение и отключаться от AP
 	CP	1
 	JZ	command_error
 	CP	2
 	JZ	command_timeout
-
-
+	_prints msg_separator
+	CALL	sleep
 ;	------------------------------------------
-;	_prints msg_recevedata				;принять данные
+	_prints msg_recevedata				;прием данных
+	_fillzero input_bufer, #FF
+	LD	HL,input_bufer
+lwair	_zifi_receve
+	JZ	lwair
+	_prints	input_bufer
+	_prints msg_separator
+	CALL	sleep
 ;	------------------------------------------
-;	_prints msg_closeconn_1
-;	_fillzero input_bufer,#FF
-;	LD	A,1					;Номер канала
-;	_zifi_close_tcp input_bufer			;Закрыть соединение 1
-;	PUSH	AF
-;	_prints input_bufer
-;	POP	AF
-;	LD	B,1					;отключаться от AP
-;	CP	1
-;	JZ	command_error
-;	CP	2
-;	JZ	command_timeout
+l2d	;_prints msg_separator				;закрытие соединение
+	_prints msg_closeconn_1
+	_fillzero input_bufer,#FF
+	LD	A,1					;Номер канала
+	_zifi_close_tcp input_bufer			;Закрыть соединение 1
+	PUSH	AF
+	_prints input_bufer
+	POP	AF
+	LD	B,1					;отключаться от AP
+	CP	1
+	JZ	command_error
+	CP	2					;Это не имеет смывсла, но пусть будет
+	JZ	command_timeout
 
 l1d	_prints msg_separator
 ;	------------------------------------------
@@ -180,6 +192,8 @@ command_error
 	OR	A
 	JP	Z,mloop
 	_cur_off
+	CP	2
+	JP	Z,l2d
 	JP	l1d
 
 command_timeout
@@ -189,6 +203,8 @@ command_timeout
 	OR	A
 	JP	Z,mloop
 	_cur_off
+	CP	2
+	JP	Z,l2d
 	JP	l1d
 
 delsymtermmode	;delete symbol in terminal mode
@@ -241,6 +257,12 @@ init	XOR	A
 	LD 	(mode),A	;set terminal mode
 	RET
 
+sleep 	PUSH	BC
+	LD	B,100
+1	HALT
+	DJNZ	1b
+	POP	BC
+	RET
 
 ;/ inctease counter every interrupt
 INCCNTR LD	A,(im_cntr)

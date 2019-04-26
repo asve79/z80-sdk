@@ -62,7 +62,6 @@
 	ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_receve buf
-	LD	HL,buf
+	MACRO	_zifi_receve
 	CALL	zifi.receve
 	ENDM
