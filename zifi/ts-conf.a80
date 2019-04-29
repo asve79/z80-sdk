@@ -325,33 +325,22 @@ disconnect_ap	PUSH	HL
 ;  :  A - 0-9 - Connection ID, #FF - ERROR
 ;+CIPSTART: (id), (<⨯>), (<ip>), (<port>)
 ;AT+CIPSTART=1, "TCP", "192.168.101.100", 1000
-open_tcp	PUSH	HL
-		LD	A,1		;TODO : проверять соединение в реестре
-		LD	HL,registry	;адрес в реестре
-		LD	(HL),A
-		INC 	HL
-		PUSH	HL
-		EXX
-		POP	HL
-		LD	(HL),E
-		INC	HL
-		LD	(HL),D
-		PUSH	HL
-		EXX
-		POP	HL
-		INC	HL
-		LD	(HL),C
-		INC	HL
-		LD	(HL),B
-		POP	HL
+open_tcp	CALL	add_connection	;заполняем данными реестр, если можно. Пока не выделяем ID
+		OR	A
+		RET	NZ		;Если ошибка
 		PUSH	HL		;-----------------
-		PUSH	DE
-		EX 	DE,HL		;HL=<host>,0,<port>,0
+		PUSH	DE		;
+
+		EX 	DE,HL		;HL=<host>,0,<port>,0  DE-буфер операций
 		PUSH	HL
 		LD	HL,cmd_cipstart	;команда AT+CIPSTART="
 		LD	BC,12
 		LDIR
-		LD	A,'1'		;!!!!!!!!!!!!DUMMY!!!!!!!!!!11
+		CALL	get_id_connection
+		CP	#FF
+		JR	Z,ot_err2
+		LD	(otpsaveconnid),A
+		ADD	'0'
 		LD	(DE),A
 		INC	DE
 		LD	HL,cmd_quetesp+1  ;часть команды ',"'
@@ -361,7 +350,7 @@ open_tcp	PUSH	HL
 		LD	BC,6
 		LDIR
 		POP	HL			;HL=<host>,0,<port>,0
-ot1		LDI				;ПИшем SSID
+ot1		LDI
 		LD	A,(HL)
 		OR	A
 		JR	NZ,ot1
@@ -387,14 +376,15 @@ ot2		LDI				;часть команды
 		CALL	wait_status
 		OR	A
 		JR	NZ,ot_err
-		;* TODO работа с реестром
-		OR	A
-		JR	NZ,ot_err
-		LD	A,1			;DUMMY
-						;тут надо выделять ID соединению
+
+		lD	A,(otpsaveconnid)
 		RET
+ot_err2		POP	DE
+		POP	HL
+		POP	DE
 ot_err		LD	A,#FF			;ERROR
 		RET
+otpsaveconnid	DB	0
 
 ;-- Закрыть TCP соединение ----------------------------------------------------------
 ;i : HL - буфер для операций
@@ -402,7 +392,9 @@ ot_err		LD	A,#FF			;ERROR
 ;o : HL - результат работы команды
 ;  :  A - 0 - OK, 1- ERROR
 ;AT+CIPCLOSE=<id>
-close_tcp	PUSH	HL
+close_tcp	PUSH	DE
+		PUSH	HL
+		LD	(otpsaveconnid),A
 		EX 	DE,HL
 		LD	HL,cmd_close	;команда AT+CIPCLOSE=
 		LD	BC,12
@@ -415,7 +407,13 @@ close_tcp	PUSH	HL
 		LDIR
 		POP	HL
 		CALL	send_cmd
-		JP	wait_status
+		CALL	wait_status
+		POP	DE
+		PUSH	AF
+		LD	A,(otpsaveconnid)
+		CALL	free_id		;Освободим ID
+		POP	AF
+		RET
 
 ;-- PING хоста ---------------------------------------------------------------------
 ;i : HL - буфер для операций
@@ -531,6 +529,7 @@ send1		LD	A,(DE)		;отправить данные в порт. В <BC> разм
 ;o : A = 0 - OK, 1 - ERROR
 add_connection
 		PUSH	HL
+		PUSH	DE
 		PUSH	BC
 		LD	B,0		;счетчик
 		LD	HL,registry
@@ -562,6 +561,7 @@ a_conn2		POP	BC		;Тут уже пишем в реестр
 		LD	(IX+4),L
 		XOR	A
 		POP	IX
+		POP	DE
 		POP	HL
 		RET
 
@@ -572,7 +572,7 @@ get_id_connection
 		PUSH	DE
 		PUSH	HL
 		LD	HL,registry
-		LD	B,0
+		LD	B,1
 		LD	DE,9
 gic1		LD	A,(HL)
 		CP	#FF		;искать первый свободный слот (отмечен FF)
@@ -597,9 +597,11 @@ gic4		LD	B,#FF		;Если больше 10 циклов, значит свобо�
 free_id		PUSH	AF
 		PUSH	HL
 		CALL	retreqaddr
+		CP	#FF
+		JR	Z,fid_e
 		LD	A,#FF
 		LD	(HL),A
-		POP	HL
+fid_e		POP	HL
 		POP	AF
 		RET
 
@@ -608,7 +610,7 @@ free_id		PUSH	AF
 ;i  : A  - desctiptor
 ;   : HL - ptr to bufer with data
 ;   : BC - length
-;o  :  A - descriptor(0-9) - OK, OR #FF - ERROR (Not found or owerflow)
+;o  :  A - descriptor(1-9) - OK, OR #FF - ERROR (Not found or owerflow)
 ;   : BC - сколько было записано
 putdata		PUSH	DE		;(*1)общее сохранение
 		PUSH	HL
@@ -665,7 +667,7 @@ putdat_owerflow	DB	0
 ;Получить адрес буфера по ID
 ;i: A - descriptor
 ;o: HL - bufer
-;    A - descriptor(0-9) - OK, OR #FF - ERROR (Not found, alredy released)
+;    A - descriptor(1-9) - OK, OR #FF - ERROR (Not found, alredy released)
 getbuferaddr	PUSH	DE
 		PUSH	HL
 		CALL	retreqaddr
@@ -684,7 +686,7 @@ getbuferaddr	PUSH	DE
 ;Получить адрес куда можно писать данные по ID
 ;i: A - descriptor
 ;o: HL - address to write
-;    A - descriptor(0-9) - OK, OR #FF - ERROR (Not found, alredy released)
+;    A - descriptor(1-9) - OK, OR #FF - ERROR (Not found, alredy released)
 getdataptr	PUSH	HL
 		PUSH	DE
 		CALL	retreqaddr
@@ -704,7 +706,7 @@ getdataptr	PUSH	HL
 ;Сбросить указатель буфера по ID
 ;Указатель куда можно писать данные будет указывать на начало буфера
 ;i: A - descriptor
-;    A - descriptor(0-9) - OK, OR #FF - ERROR (Not found, alredy released)
+;    A - descriptor(1-9) - OK, OR #FF - ERROR (Not found, alredy released)
 resetptr	PUSH	HL
 		CALL	retreqaddr
 		PUSH	IX
@@ -725,7 +727,10 @@ resetptr	PUSH	HL
 ;i : A - desctiptor
 ;o : HL - адрес записи в реестре
 retreqaddr	LD	HL,registry
-		OR	A
+		DEC	A
+		CP	#FF
+		RET	Z
+		OR	A		;'A' must be > 0
 		RET	Z
 		PUSH	BC
 		PUSH	DE
