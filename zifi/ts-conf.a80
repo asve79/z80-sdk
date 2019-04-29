@@ -742,12 +742,18 @@ rra1		ADD	HL,DE
 ;o : HL - ответ
 ;  :  A - 0 - если ничего не принято
 ;!!!!!!! Отладка. не целевой.
-receve		CALL	uart_ts_zifi.read_fifo_byte
+receve		LD	B,250
+		CALL	uart_ts_zifi.rx_fifo_cnt
 		OR	A
 		RET	Z
+		CP	B
+		JR	NC, recv1	;if A >= B goto recv1
+		LD	B,A		;if A < B set COUNT B = A
+recv1		CALL	uart_ts_zifi.read_fifo_byte
 		LD	(HL),A
 		INC 	HL
-		JR	receve
+		DJNZ	recv1
+		RET
 
 		include	"commands.a80"
 		include "../sockets/uart_ts_zifi.a80"

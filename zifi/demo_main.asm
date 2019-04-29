@@ -14,8 +14,8 @@
 	ENDIF
 
 credentials
-	;DB	"ae-pio",0,"aewifi456",0
-	DB	"asve6s",0,"testtest",0
+	DB	"ae-pio",0,"aewifi456",0
+	;DB	"asve6s",0,"testtest",0
 
 ;- MAIN PROCEDURE -
 PROG
@@ -121,11 +121,15 @@ P1	_prints msg_init
 	CALL	sleep
 ;	------------------------------------------
 	_prints msg_recevedata				;прием данных
-	_fillzero input_bufer, #FF
+lwair1	_fillzero input_bufer, #FF
 	LD	HL,input_bufer
-lwair	_zifi_receve
+lwair	halt
+	_zifi_receve
 	JZ	lwair
 	_prints	input_bufer
+	_zifi_receve					;проверить нет ли чего еще в буфере
+	JR	NZ,lwair1
+
 	_prints msg_separator
 	CALL	sleep
 ;	------------------------------------------
@@ -140,7 +144,7 @@ l2d	;_prints msg_separator				;закрытие соединение
 	LD	B,1					;отключаться от AP
 	CP	1
 	JZ	command_error
-	CP	2					;Это не имеет смывсла, но пусть будет
+	CP	2					;Это не имеет смысла, но пусть будет
 	JZ	command_timeout
 
 l1d	_prints msg_separator
