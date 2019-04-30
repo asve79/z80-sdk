@@ -1,69 +1,99 @@
 		module zifi
 
+
+pCMOS_ADDR	EQU	#DFF7
+pCMOS_DATA	EQU	#BFF7
+pCMOS_CONF	EQU	#EFF7
+
 ;------------------------------------------------------------------------------------
-;��ࢨ�� �-樨
+;Вспомогательные модуля
 ;------------------------------------------------------------------------------------
-;�ਭ��� �⢥� �� ����� � �஠������஢��� ����� �믮������ �������
-;i: 
+;Ожидание статуста выполнения команды и вывод кода. TODO: Обработка таймаута
+;i:
 ; HL - bufer
-;o: A=0 - ok A=1 - ERROR
+;o: A=0 - OK
+;   A=1 - ERROR
+;   A=2 - TIMEOUT
+;   A=3 - 'ready'
 wait_status	DI
 		PUSH	BC
 		PUSH	DE
 		PUSH	HL
 		LD	(ptr),HL
 		DEC	HL
-		LD	BC,0000				;���稪
-ws2;		PUSH	BC
-;		PUSH	DE
-;		PUSH	HL
-;		_hl_hex
-;		PUSH	BC
-;		POP	HL
-;		_hl_hex
-;		LD	A,13
-;		_printc
-;		POP	HL
-;		POP	DE
-;		POP	BC
-
-		CALL	uart_ts_zifi.rx_fifo_cnt
+		call	getRTCsec
+		DEC	A
+		CP	#FF
+		JR	NZ,ws19
+		LD	A,59
+ws19		LD	(bsecond),A			;откуда начался отсчет. нужно для контролья перехода 59->0
+		;PUSH	AF
+		;_a_hex
+		;POP	AF
+		LD	b,a
+		LD	A,(timeout)
+		ADD	B	 			;добавим к значению сколько секунд ждем
+		LD	(sectimeout),A			;Вычислили значение после которого считаем что наступил таймаут
+		;_a_hex
+		LD	BC,0000				;????????
+		JR	ws2
+ws20		NOP					;Основной цикл
+		call	getRTCsec			;берем текущее значение секунд
+		;_a_hex
+		PUSH	BC
+		LD	B,A
+		LD	A,(bsecond)
+		CP	B
+		JR	C,ws21				;если A(bsecond) < B(current seconds) то перескока 59-0 небыло
+		LD	A,B
+		add	60
+		LD	B,A
+ws21		LD	A,(sectimeout)			;а теперь проверяем на таймаут
+		CP	B
+		JR	C,ws_timeout			;если A(timeout marker) < B(current seconds + corrector) то значит наступил таймаут
+		POP	BC
+ws2		CALL	uart_ts_zifi.rx_fifo_cnt
 		OR	A
-		JR	Z,ws2				;wait data
-;		LD	A,"r"
-;		_printc
+		JR	Z,ws20				;wait data
 		CALL	uart_ts_zifi.read_fifo_byte	;read byte
 		LD	(HL),A
-;		PUSH	AF
-;		_printc
-;		POP	AF
 		INC	HL
 		INC	BC
 		CP	10				;if end-of-line (code 13)
 		JR	NZ,ws2				;
 		PUSH	HL
 		PUSH	BC
-wc4		LD	DE,msg_ok			;� ��� �஢��塞 �����
+wc4		LD	DE,msg_ok			;Проверка статуста ОК
 		LD	BC,5
 		CALL	check_status
 		OR	A
-		JR	NZ,ws7				;�������� � ����ᮢ �=0 �� ���� ������� "��"
+		JR	NZ,ws7				;Если ОК
+		LD	DE,msg_send_ok			;Проверка статуста SEND ОК
+		LD	BC,9
+		CALL	check_status
+		OR	A
+		JR	NZ,ws7				;Если SEND ОК
 		LD	DE,msg_error
 		LD	BC,8
 		CALL	check_status
 		OR	A
-		JR	NZ,ws6				;�������� � ����ᮬ � �=1 �� ���� ������� "ERROR"
+		JR	NZ,ws6				;Если ERROR
+		LD	DE,msg_ready
+		LD	BC,8
+		CALL	check_status
+		OR	A
+		JR	NZ,ws9				;Если 'ready'
 		POP	BC
-		POP	HL				;�த������ �ਭ����� �����
+		POP	HL				;Запоминаем позици идем дальше
 		DEC	HL
 		LD	(ptr),HL
 		INC	HL
 		JR	ws2
-ws7		POP	BC
+ws7		POP	BC				;код возврата 0, все хорошо
 		POP	HL
-		XOR	A				;��
-		JR	ws8				
-ws6		POP	BC
+		XOR	A				;ОК
+		JR	ws8
+ws6		POP	BC				;код возврата 1. Ошибка
 		POP	HL
 		LD	A,1				;ERROR
 ws8		POP	HL
@@ -71,39 +101,28 @@ ws8		POP	HL
 		POP	BC
 		EI
 		RET
+ws9		POP	BC				;Код возврата 3 - Ready
+		POP	HL
+		LD	A,3				;ready
+		RET
+ws_timeout	POP	BC				;Код возврата 2 - TIMEOUT
+		LD	A,2
+		JR	ws8
+
+sectimeout	DB	0				;Значение секунд которое будет считаться наступлением таймаута
+bsecond		DB	0				;начальные секунды
+timeout		DB	10				;таймаут операции в секундах
 ;i:
-; (ptr) - ����
-; DL - � 祬 �ࠢ������
-; BC - ᪮�쪮 ᨬ����� �ࠢ������
+; (ptr) - казатель на буфер
+; DL - эталон, с которым сравниваем
+; BC - длина строки
 ;o:
 ; A:
-; 0 - �� �������
-; 1 - �������
+; 0 - не совпал
+; 1 - совал
 check_status	PUSH	HL
 		LD	HL,(ptr)
-;		PUSH	HL
-;		PUSH	DE
-;		PUSH	BC
-;		LD	A,'E'
-;		_printc
-;		POP	BC
-;		POP	DE
-;		POP	HL
-cstat_loop	;PUSH	HL
-;		PUSH	DE
-;		PUSH	BC
-;		LD	A,">"
-;		_printc
-;		LD	A,(HL)
-;		_a_hex
-;		LD	A,(DE)
-;		_a_hex
-;		LD	A,"<"
-;		_printc
-;		POP	BC
-;		POP	DE
-;		POP	HL
-		LD	A,(DE)
+cstat_loop	LD	A,(DE)
 		CPI
 		JNZ	cstat_nf
 		INC	DE
@@ -111,48 +130,44 @@ cstat_loop	;PUSH	HL
 		DEC	C
 		JR	NZ,cstat_loop
 		LD	A,1
-;		PUSH	AF
-;		_a_hex
-;		LD	A,"*"
-;		_printc
-;		POP	AF
-;		PUSH	HL
-;		PUSH	DE
-;		PUSH	BC
-;		LD	A,'L'
-;		_printc
-;		POP	BC
-;		POP	DE
-;		POP	HL
-
 		POP	HL
 		RET
 cstat_nf	XOR	A
-;		PUSH	AF
-;		_a_hex
-;		LD	A,"*"
-;		_printc
-;		POP	AF
-;		PUSH	HL
-;		PUSH	DE
-;		PUSH	BC
-;		LD	A,'l'
-;		_printc
-;		POP	BC
-;		POP	DE
-;		POP	HL
-
-
 		POP	HL
 		RET
 
 msg_ok		DB	10,'OK',13,10
 msg_error	DB	10,'ERROR',13,10
-ptr		DW	0		;�����⥫� �� ��砫� �஢��塞��� �����
-connections	DB	0		;���-�� ������� ᮥ�������
-registry	DS	5*9,0		;������ � �ଠ⮬ <id><����_���ॠ><���ᨬ���� ࠧ��� ����>
+msg_ready	DB	10,'ready',13,10
+msg_send_ok	DB	10,'SEND OK',13,10
+ptr		DW	0		;указатель
+connections	DB	0		;счетчик соединений
+registry	DS	10*(1+2+2+2),0	;реестр соединений <id><адрес буфера><максимальный размер буфера><смещение в буфере для записи данных>
 
-;��ࠢ��� �������
+;- Взять значение секунд (для отслеживания таймаутов)
+;o: a - seconds
+getRTCsec 	PUSH	bc
+		ld	a,#80
+		ld	bc,pCMOS_CONF
+		out	(c),a
+
+		ld	a,#0B
+		ld	b,high pCMOS_ADDR
+		out	(c),a
+		ld	a,#82
+		ld	b,high pCMOS_DATA
+		out	(c),a
+;- seconds -
+		ld	a,#00
+		ld	b,high pCMOS_ADDR
+		out	(c),a
+		ld	b,high pCMOS_DATA
+		in	a,(c)
+		POP	bc
+		ret
+
+;-------------------------------------------------------------------------------
+;отправить команду из буфера
 ;i: HL - command
 send_cmd	LD	A,(HL)
 		OR	A
@@ -163,37 +178,82 @@ send_cmd	LD	A,(HL)
 		_printc
 		POP	HL
 		INC	HL
-		JR	send_cmd	
+		JR	send_cmd
 
-;------------------------------------------------------------------------------------
-;o: 
+;-------------------------------------------------------------------------------
+;o:
 ; A=0 - OK
 ; A=1 - ERROR
 init		PUSH	HL
+		LD	A,10
+		LD	(timeout),A
+		LD	HL,registry
+		LD	(HL),#FF
+		LD	DE,registry+1
+		LD	BC,10*(1+2+2+2)-1	;возможно 10 (0-9) соединений (формат реестра: ID, addr_buf, size_buf, ptr)
+		LDIR				;Заполнить реестр символами #FF
 		CALL	uart_ts_zifi.init
 		OR	A
 		POP	HL
-		RET	NZ
+		RET	NZ			;retrun if error
+		CALL	uart_ts_zifi.clear_output_fifo
+		CALL	uart_ts_zifi.clear_input_fifo
 		PUSH	HL
-		LD	HL,cmd_check		;���� ������� OK �� �����
+		LD	HL,cmd_check		;Отправка команды "AT"
 		CALL	send_cmd
 		POP	HL
 		CALL	wait_status
+		OR	A
+		RET	NZ			;retrun if error
 		PUSH	HL
-		LD	HL,cmd_cipmux		;������⢥���� ᮥ�������
+;		LD	HL,cmd_reset		;перезапустить модуль
+;		CALL	send_cmd
+;		POP	HL
+;		CALL	wait_status
+;		OR	A
+;		RET	NZ			;retrun if error
+;		LD	A,'*'
+;		_printc
+;		CALL	wait_status
+;		CP	3			;тепепрь ждем ready
+;		RET	NZ			;если не READY значит фигня какая-то, выходим.
+;		LD	A,'*'
+;		_printc
+		PUSH	HL
+		LD	HL,cmd_echooff		;выключить эхо
 		CALL	send_cmd
 		POP	HL
 		CALL	wait_status
+		OR	A
+		RET	NZ			;retrun if error
 		PUSH	HL
-		LD	HL,cmd_cipmode	
+		LD	HL,cmd_cwmode_cur	;Включение режима WIFI клиента
 		CALL	send_cmd
 		POP	HL
+		CALL	wait_status
+		OR	A
+		RET	NZ			;retrun if error
+		PUSH	HL
+		LD	HL,cmd_cwautoconn	;автоматическое подключение к AP выключить (пока)
+		CALL	send_cmd
+		POP	HL
+		CALL	wait_status
+		OR	A
+		RET	NZ			;retrun if error
+		PUSH	HL
+		LD	HL,cmd_cipmux		;Включение множественного соединения
+		CALL	send_cmd
+		POP	HL
+;		CALL	wait_status
+;		PUSH	HL
+;		LD	HL,cmd_cipmode
+;		CALL	send_cmd
+;		POP	HL
 		JP	wait_status
 
-
 ;------------------------------------------------------------------------------------
-;i : HL - ��䥪 ��� ����権
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;i : HL - бевер для операций
+;o : HL - результат выполнения операции
 ;  :  A - 0 - OK, 1- ERROR
 list_ap		PUSH	HL
 		LD	HL,cmd_cwlap
@@ -201,9 +261,9 @@ list_ap		PUSH	HL
 		POP	HL
 		JP	wait_status
 
-;-- �������� ⥪�騩 IP -------------------------------------------------------------
-;i : HL - ��䥪 ��� ����権
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;-- показать текущий IP -------------------------------------------------------------
+;i : HL - бевер для операций
+;o : HL - результат выполнения операции
 ;  :  A - 0 - OK, 1- ERROR
 current_ip	PUSH	HL
 		LD	HL,cmd_cifsr
@@ -211,33 +271,33 @@ current_ip	PUSH	HL
 		POP	HL
 		JP	wait_status
 
-;-- ����������� � AP ---------------------------------------------------------------
-;i : HL - ��䥪 ��� ����権
+;-- Вывести список AP ---------------------------------------------------------------
+;i : HL - буфер для операций
 ;  : DE - ssid,0,pass,0
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;o : HL - результат выполнения операции
 ;  :  A - 0 - OK, 1- ERROR
 connect_ap	PUSH 	HL
 		EX 	DE,HL
 		PUSH	HL
-		LD	HL,cmd_cwjap		;�����㥬 ������� AT+CWJAP="
+		LD	HL,cmd_cwjap		;отправка команды AT+CWJAP="
 		LD	BC,10
 		LDIR
 		POP	HL			;HL=<ssid>,0,<pass>,0
-cap1		LDI				;�����㥬 SSID
+cap1		LDI				;копируем SSID
 		LD	A,(HL)
 		OR	A
 		JR	NZ,cap1
 		INC	HL
 		PUSH	HL
-		LD	HL,cmd_quetesp		;�����㥥� ࠧ�����쥫� ","
+		LD	HL,cmd_quetesp		;копируем разделитель ","
 		LD	BC,3
 		LDIR
 		POP	HL			;HL=<pass>,0
-cap2		LDI				;�����㥬 ��஫�
+cap2		LDI				;копируем пароль
 		LD	A,(HL)
 		OR	A
 		JR	NZ,cap2
-		LD	HL,cmd_quetesend	;�����㥬 ���������� ��ப� ",13,10,0
+		LD	HL,cmd_quetesend	;копируем завершение строки ",13,10,0
 		LD	BC,4
 		LDIR
 		POP	HL
@@ -245,9 +305,9 @@ cap2		LDI				;�����㥬 ��஫�
 		JP	wait_status
 
 
-;--- �⪫������ �� �窨 ����㯠 ---------------------------------------------------
-;i : HL - ��䥪 ��� ����権
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;--- Отключить от точки доступа ---------------------------------------------------
+;i : HL - буфер для операций
+;o : HL - результат
 ;  :  A - 0 - OK, 1- ERROR
 disconnect_ap	PUSH	HL
 		LD	HL,cmd_cwqap
@@ -256,66 +316,55 @@ disconnect_ap	PUSH	HL
 		JP	wait_status
 
 
-;-- ������ TCP ᮥ������� ----------------------------------------------------------
-;i : HL - ���� ��� ����権.
+;-- Открыть TCP соединение ----------------------------------------------------------
+;i : HL - буфер для операций
 ;  : DE - address,0,port,0
-;  : DE` - ���� �ਥ����� ���� ��� ������� ������. ���c �㤥� ��ॣ����஢�� � ॥���. �� �室�騥 ������ �� ������� ���ਯ��� ���� ��ࠢ������ � ��� ����
-;  : BC - ���ᨬ���� ࠧ��� ����
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;  : DE` - адрес буфера, куда будут приходить данные по соединению.
+;  : BC - размер буфера
+;o : HL - результат
 ;  :  A - 0-9 - Connection ID, #FF - ERROR
-;+CIPSTART: (id), (<⨯>), (<ip>), (<����>)
+;+CIPSTART: (id), (<⨯>), (<ip>), (<port>)
 ;AT+CIPSTART=1, "TCP", "192.168.101.100", 1000
-open_tcp	PUSH	HL
-		LD	A,1		;TODO : ������� ���ਯ�� �������᪨. ���� 1 ��� �����誠
-		LD	HL,registry	;������� � registry �����䨪��� � ���� ���� � ����� ���� ����ᠭ� �����
-		LD	(HL),A
-		INC 	HL
+open_tcp	CALL	add_connection	;заполняем данными реестр, если можно. Пока не выделяем ID
+		OR	A
+		RET	NZ		;Если ошибка
+		PUSH	HL		;-----------------
+		PUSH	DE		;
+
+		EX 	DE,HL		;HL=<host>,0,<port>,0  DE-буфер операций
 		PUSH	HL
-		EXX
-		POP	HL
-		LD	(HL),E
-		INC	HL
-		LD	(HL),D
-		PUSH	HL
-		EXX
-		POP	HL
-		INC	HL
-		LD	(HL),C
-		INC	HL
-		LD	(HL),B
-		POP	HL
-		PUSH	HL		;----------------- ࠡ�⠥�	
-		PUSH	DE
-		EX 	DE,HL		;HL=<host>,0,<port>,0
-		PUSH	HL
-		LD	HL,cmd_cipstart	;�����㥬 ������� AT+CIPSTART="
+		LD	HL,cmd_cipstart	;команда AT+CIPSTART="
 		LD	BC,12
 		LDIR
-		LD	A,'1'		;!!!!!!!!!!!!DUMMY!!!!!!!!!!11
+		CALL	get_id_connection
+		CP	#FF
+		JR	Z,ot_err2
+		LD	(otpsaveconnid),A
+		ADD	'0'
 		LD	(DE),A
 		INC	DE
-		LD	HL,cmd_quetesp+1  ;�����㥥� ࠧ�����쥫� ',"'
+		LD	HL,cmd_quetesp+1  ;часть команды ',"'
 		LD	BC,2
 		LDIR
-		LD	HL,cmd_tcp	;�����㥬 ��ப� TCP","
+		LD	HL,cmd_tcp	;часть команды TCP","
 		LD	BC,6
 		LDIR
 		POP	HL			;HL=<host>,0,<port>,0
-ot1		LDI				;�����㥬 SSID
+ot1		LDI
 		LD	A,(HL)
 		OR	A
 		JR	NZ,ot1
 		INC	HL
 		PUSH	HL
-		LD	HL,cmd_quetesp		;�����㥥� ࠧ�����쥫� '",'
+		LD	HL,cmd_quetesp		;промежуточные символы '",'
 		LD	BC,2
 		LDIR
 		POP	HL			;HL=<port>,0
-ot2		LDI				;�����㥬 ����
+ot2		LDI				;часть команды
 		LD	A,(HL)
 		OR	A
 		JR	NZ,ot2
-		LD	HL,cmd_quetesend+1	;�����㥬 ���������� ��ப� 13,10,0
+		LD	HL,cmd_quetesend+1	;закрыть команду 13,10,0
 		LD	BC,3
 		LDIR
 		POP	DE
@@ -325,40 +374,51 @@ ot2		LDI				;�����㥬 ����
 ;		POP	DE
 ;		POP	HL
 		CALL	wait_status
-		;* TODO ������� �����䨪���
 		OR	A
-		JR	NZ,oterr
-		LD	A,1			;DUMMY
-						;��� ���� ������� �����䨪���
-		RET
-oterr		LD	A,#FF			;ERROR
-		RET
+		JR	NZ,ot_err
 
-;-- ������� TCP ᮥ������� ----------------------------------------------------------
-;i : HL - ���� ��� ����権
+		lD	A,(otpsaveconnid)
+		RET
+ot_err2		POP	DE
+		POP	HL
+		POP	DE
+ot_err		LD	A,#FF			;ERROR
+		RET
+otpsaveconnid	DB	0
+
+;-- Закрыть TCP соединение ----------------------------------------------------------
+;i : HL - буфер для операций
 ;  : A - <ID>
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;o : HL - результат работы команды
 ;  :  A - 0 - OK, 1- ERROR
 ;AT+CIPCLOSE=<id>
-close_tcp	PUSH	HL
+close_tcp	PUSH	DE
+		PUSH	HL
+		LD	(otpsaveconnid),A
 		EX 	DE,HL
-		LD	HL,cmd_close	;�����㥬 ������� AT+CIPCLOSE=
+		LD	HL,cmd_close	;команда AT+CIPCLOSE=
 		LD	BC,12
 		LDIR
 		ADD	'0'
-		LD	(DE),A		;��⠢��� �����䨪��� ᮥ�������
+		LD	(DE),A		;Тут пишем номер соединения
 		INC	DE
-		LD	HL,cmd_quetesend+1	;�����㥬 ���������� ��ப� 13,10,0
+		LD	HL,cmd_quetesend+1	;закрывающая часть команды 13,10,0
 		LD	BC,3
 		LDIR
 		POP	HL
 		CALL	send_cmd
-		JP	wait_status
+		CALL	wait_status
+		POP	DE
+		PUSH	AF
+		LD	A,(otpsaveconnid)
+		CALL	free_id		;Освободим ID
+		POP	AF
+		RET
 
-;-- PING ���� ---------------------------------------------------------------------
-;i : HL - ��䥪 ��� ����権
+;-- PING хоста ---------------------------------------------------------------------
+;i : HL - буфер для операций
 ;  : DE - addr,0
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;o : HL - результат работы команды
 ;  :  A - 0 - OK, 1- ERROR
 ;AT+PING="192.168.1.1"
 ;AT+PING="www.ya.ru"
@@ -367,16 +427,16 @@ ping		PUSH 	HL
 		PUSH	HL
 		EX 	DE,HL
 		PUSH	HL
-		LD	HL,cmd_ping		;�����㥬 ������� AT+PING="
+		LD	HL,cmd_ping		;выполнить команду AT+PING="
 		LD	BC,9
 		LDIR
 		POP	HL			;HL=<ardr>,0
-ping1		LDI				;�����㥬 ����
+ping1		LDI
 		LD	A,(HL)
 		OR	A
 		JR	NZ,ping1
 		INC	HL
-		LD	HL,cmd_quetesend		;;�����㥬 ���������� ��ப� ",13,10,0
+		LD	HL,cmd_quetesend		;закрыть команду ",13,10,0
 		LD	BC,4
 		LDIR
 		POP	HL
@@ -385,38 +445,63 @@ ping1		LDI				;�����㥬 ����
 		POP	HL
 		JP	wait_status
 
-;-- ��ࠢ��� ����� ----------------------------------------------------------------
-;i : HL - ���� ��� ����権. 
-;  : DE - ���� � ����묨
-;  : A - <ID>
-;  : BC - ࠧ���
-;o : HL - 㪠��⥫� �� ᮮ�饭��
+;-- Отправить данные ----------------------------------------------------------------
+;i : HL - буфер для операций и результата
+;  : DE - буфер с данными для отправки
+;  : A - <ID> соединения
+;  : BC - размер
+;o : HL - Ответ
 ;  :  A - 0 - OK, 1- ERROR
-;AT+CIPSEND=<id>, <ࠧ���> <�����>
+;AT+CIPSEND=<id>, размер; ждем '>' и передаем данные
 send		PUSH	HL
 		PUSH	DE
-		EX 	DE,HL
+		PUSH	BC
 		PUSH	HL
-		LD	HL,cmd_cipsend	;�����㥬 ������� AT+CIPSEND=
+		EX 	DE,HL		;теперь в DE адрес куда пишем
+		LD	HL,cmd_cipsend	;команда AT+CIPSEND=
+		PUSH	BC
 		LD	BC,11
 		LDIR
+		POP	BC
 		ADD	'0'
-		LD	(HL),A		;��⠢��� �����䨪��� ᮥ�������
-		INC	HL
-		LD	A,','		;��⠢��� �������
-		LD	(HL),A
-		INC	HL
+		LD	(DE),A		;идентификатор соединения
+		INC	DE
+		LD	A,','		;разделитель
+		LD	(DE),A
+		INC	DE
 		PUSH	BC
 		POP	HL
-		_bc_dec_hl		;"�������� � ���� ࠧ���
+		CALL	_int2str
+		EX	DE,HL		;В HL сново буфер куда пишем
+		INC	HL
+		LD	(HL),13			;признак окончания
+		INC	HL
+		LD	(HL),10
+		INC	HL
+		LD	(HL),0
 		POP	HL
-		CALL	send_cmd	
+		CALL	send_cmd
+		POP	BC
 		POP	DE
 		POP	HL
+		CALL	wait_status
+		OR	A
+		RET	NZ
+		LD	A,"#"
+		_printc
+sendw1		CALL	uart_ts_zifi.rx_fifo_cnt	;теперь ждем приглашения на отправку данных (">")
+		OR	A
+		JR	Z,sendw1			;wait data
+		CALL	uart_ts_zifi.read_fifo_byte	;read byte
+		CP	A,">"
+		JR	NZ,sendw1			;wait until '>'
+		_printc			;/* DEBUG */
 		PUSH	HL
 		PUSH	DE
-send1		LD	A,(DE)		;��ࠢ��� <BC> ���� � ����
+		PUSH	BC
+send1		LD	A,(DE)		;отправить данные в порт. В <BC> размер блока
 		CALL	uart_ts_zifi.send_fifo_byte
+		_printc			;/* DEBUG */
 		INC	DE
 		DEC	BC
 		LD	A,C
@@ -425,25 +510,257 @@ send1		LD	A,(DE)		;��ࠢ��� <BC> ���� � ����
 		LD	A,B
 		OR	A
 		JR	NZ,send1
+		POP	BC
 		POP	DE
 		POP	HL
 		JP	wait_status
 
-;-- �ਭ��� ����� ------------------------------------------------------------------
-;i : HL - ���� ��� ����権. 
-;o : HL - 㪠��⥫� �� ᮮ�饭��
-;  :  A - 0 - OK, 1- ERROR
-;AT+IPD
-receve		PUSH	HL
-		LD	HL,cmd_ipd	;�����㥬 ������� AT+IPD,13,10,0
-		LD	BC,11
-		LDIR
+;--- реестр соединений -
+;	descriptor[1]	+0	- дескриптор
+;	bufer_addr[2]	+1	- адрес буфера
+;	bufer_size[2]	+3	- крайний адрес буфера, до которого можно писать даныне (bufer_addr + размер буфера)
+;	offset[2]	+5	- адрес первой ячейки буфера куда можно писать данные (bufer_addr+ptr)
 
+;-------------------------------------------------------------------------------
+;Добавить соединение. Просто зарегистрировет параметры, без выделения ID
+;i :
+;  : DE` - адрес буфера, куда будут приходить данные по соединению.
+;  : BC - размер буфера
+;o : A = 0 - OK, 1 - ERROR
+add_connection
+		PUSH	HL
+		PUSH	DE
+		PUSH	BC
+		LD	B,0		;счетчик
+		LD	HL,registry
+a_conn1		LD	A,(HL)
+		CP	#FF		;смотрим свободный слот или нет (FF - свободен)
+		JR	Z, a_conn2
+		INC	B
+		LD	A,B
+		CP	10		;проверка что не больше 10 (0-9)
+		JR	NZ,a_conn1
+		LD	A,1
+		POP	BC
+		POP	HL
+		RET
+a_conn2		POP	BC		;Тут уже пишем в реестр
+		PUSH	IX
+		PUSH	HL
+		POP	IX
+		EXX
+		PUSH	DE
+		EXX
+		POP	DE
+		LD	(IX+1),D	;адрес буфера
+		LD	(IX+2),E
+		LD	(IX+5),D	;смещение для записи данных = адресу буфера
+		LD	(IX+6),E
+		ADD	HL,BC
+		LD	(IX+3),H	;размер буфера + адрес буфера (максимальный адрес, куда писать уже нельзя)
+		LD	(IX+4),L
+		XOR	A
+		POP	IX
+		POP	DE
 		POP	HL
 		RET
 
+;Назначить ID соединению, данные которого были записаны в первую область с FF
+;o: A = (0-9) descriptor or #FF - error
+get_id_connection
+		PUSH	BC
+		PUSH	DE
+		PUSH	HL
+		LD	HL,registry
+		LD	B,1
+		LD	DE,9
+gic1		LD	A,(HL)
+		CP	#FF		;искать первый свободный слот (отмечен FF)
+		JR	Z,gic3
+		LD	A,B
+		CP	10		;проверка что не вышли за 10 дескрипторов
+		JR	Z,gic4
+		ADD	HL,DE
+		INC	B
+		JR	gic1
+gic3		LD	(HL),B		;назначить идентификатор в реестре
+		LD	A,B		;вернуть идентификатор в A
+		POP	HL
+		POP	DE
+		POP	BC
+		RET
+gic4		LD	B,#FF		;Если больше 10 циклов, значит свободного дискриптора нет
+		JR	gic3
 
+;Освободить ID 	(найдет и забьет его #FF-кой)
+;i : A = descriptor
+free_id		PUSH	AF
+		PUSH	HL
+		CALL	retreqaddr
+		CP	#FF
+		JR	Z,fid_e
+		LD	A,#FF
+		LD	(HL),A
+fid_e		POP	HL
+		POP	AF
+		RET
+
+;Записать данные в буфер по ID. Пишет в буфер увеличивает ptr
+;также проверит нет ли переполнения буфера
+;i  : A  - desctiptor
+;   : HL - ptr to bufer with data
+;   : BC - length
+;o  :  A - descriptor(1-9) - OK, OR #FF - ERROR (Not found or owerflow)
+;   : BC - сколько было записано
+putdata		PUSH	DE		;(*1)общее сохранение
+		PUSH	HL
+		PUSH	IX
+		EX	DE,HL		;Тпереь в DE адрес откуда будем читать
+		CALL	retreqaddr
+		LD	A,(HL)
+		PUSH	AF		;(*2) фиксируем дескриптор
+		CP	#FF		;проверим есть ли дескриптор
+		JR	NZ,putdata1
+		LD	BC,0		;если нет десктриптора то выходим и говорим что записали 0 байт
+		JR	putdat_ex
+putdata1	PUSH	HL
+		POP	IX		;IX = адрес записи в registry, DE - откуда будем читать BC - сколько писать
+		LD	H,(IX+5)
+		LD	L,(IX+6)	;В HL = адрес, куда будем писать
+		PUSH	HL		;(*3) запомним адрес
+		ADD	HL,BC		;в HL адрес куда попадем если запишем столько, сколько хочется
+		XOR	A
+		LD	(putdat_owerflow),A	;признак переполнения
+		LD	A,L
+		SUB	(IX+4)
+		JR	NC,putdata2
+		LD	(putdat_owerflow),A
+		DEC	H
+putdata2	LD	A,H
+		SUB	(IX+3)
+		JR	NC,putdata3
+		LD	(putdat_owerflow),A
+putdata3	LD	A,(putdat_owerflow)
+		OR	A
+		JR	NZ,putdata7	; если было переполнение то можем писать столько, сколько хотели (желаемый меньше максимального)
+;		XOR	A		; если небыло (желаемый оказался больше максимального). теперь в HL на сколько мы его превысили
+;		LD	(putdat_owerflow),A; обнулимся
+		LD	A,C		;теперь из BC вычтем полученную дельту (склько не межем запихнуть в буфер)
+		SUB	L
+		JR	NC,putdata4
+		DEC	H
+putdata4	LD	A,H
+		SUB	B
+putdata7	POP	HL		;(*3) вспомним куда писать
+		PUSH	BC		;(*3) запомним сколько записали байт
+		LDIR
+		LD	(IX+5),H	;Запоминим куда писали данные
+		LD	(IX+6),L
+		POP	BC		;(*3) вспомним чтобы вернуть
+putdat_ex	POP	AF		;(*2) вспомнить статус
+		POP	IX		;(*1) восстановление попорченного
+		POP	HL
+		POP	DE
+		RET
+putdat_owerflow	DB	0
+
+;Получить адрес буфера по ID
+;i: A - descriptor
+;o: HL - bufer
+;    A - descriptor(1-9) - OK, OR #FF - ERROR (Not found, alredy released)
+getbuferaddr	PUSH	DE
+		PUSH	HL
+		CALL	retreqaddr
+		LD	A,(HL)		;запомним ID, даже если FF все равно вернем адрес
+		PUSH	AF
+		INC	HL
+		LD	D,(HL)
+		INC	HL
+		LD	E,(HL)
+		EX	DE,HL
+		POP	AF
+		POP	HL
+		POP	DE
+		RET
+
+;Получить адрес куда можно писать данные по ID
+;i: A - descriptor
+;o: HL - address to write
+;    A - descriptor(1-9) - OK, OR #FF - ERROR (Not found, alredy released)
+getdataptr	PUSH	HL
+		PUSH	DE
+		CALL	retreqaddr
+		LD	A,(HL)		;запомним ID, даже если FF все равно вернем адрес
+		PUSH	AF
+		LD	BC,5
+		ADD	HL,BC		;смещаемся на указатель смещения в буфере
+		LD	D,(HL)
+		INC	HL
+		LD	E,(HL)
+		EX	DE,HL
+		POP	AF
+		POP	DE
+		POP	HL
+		RET
+
+;Сбросить указатель буфера по ID
+;Указатель куда можно писать данные будет указывать на начало буфера
+;i: A - descriptor
+;    A - descriptor(1-9) - OK, OR #FF - ERROR (Not found, alredy released)
+resetptr	PUSH	HL
+		CALL	retreqaddr
+		PUSH	IX
+		PUSH	HL
+		POP	IX
+		LD	A,(IX)		;запомним ID, даже если FF все равно заполним нулями
+		PUSH	AF
+		LD	A,(IX+1)
+		LD	(IX+5),A
+		LD	A,(IX+2)
+		LD	(IX+6),A
+		POP	AF
+		POP	IX
+		POP	HL
+		RET
+
+;вернуть указать на запись в реестре
+;i : A - desctiptor
+;o : HL - адрес записи в реестре
+retreqaddr	LD	HL,registry
+		DEC	A
+		CP	#FF
+		RET	Z
+		OR	A		;'A' must be > 0
+		RET	Z
+		PUSH	BC
+		PUSH	DE
+		LD	DE,7
+		LD	B,A
+rra1		ADD	HL,DE
+		DJNZ	rra1
+		POP	DE
+		POP	BC
+		RET
+
+;-- Принять данные ------------------------------------------------------------------
+;i : HL - буфер (временно, до отладки менеджера потоков)
+;o : HL - ответ
+;  :  A - 0 - если ничего не принято
+;!!!!!!! Отладка. не целевой.
+receve		LD	B,250
+		CALL	uart_ts_zifi.rx_fifo_cnt
+		OR	A
+		RET	Z
+		CP	B
+		JR	NC, recv1	;if A >= B goto recv1
+		LD	B,A		;if A < B set COUNT B = A
+recv1		CALL	uart_ts_zifi.read_fifo_byte
+		LD	(HL),A
+		INC 	HL
+		DJNZ	recv1
+		RET
 
 		include	"commands.a80"
 		include "../sockets/uart_ts_zifi.a80"
+		include "../strings/int2str.asm"
 		endmodule

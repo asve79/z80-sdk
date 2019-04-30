@@ -11,8 +11,12 @@ cmd_cipmode	DB	'AT+CIPMODE=0',13,10,0	;0 — нормальный режим 1 �
 cmd_cipmux	DB	'AT+CIPMUX=1',13,10,0	;Множественное соединение возможно
 cmd_cipstart	DB	'AT+CIPSTART="'		;Открыть соединение TCP или UDP (Прим: AT+CIPSTART="TCP", "192.168.101.100", 1000)
 cmd_tcp		DB	'TCP","'
-cmd_udp		DB	'UDP","'	
+cmd_udp		DB	'UDP","'
 cmd_check	DB	'AT',13,10,0
 cmd_close	DB	'AT+CIPCLOSE='		;Закрыть соединение TCP или UDP
 cmd_cipsend	DB	'AT+CIPSEND='		;Отправить данные AT+CIPSEND=<id>,<размер> <данныеЮ
+cmd_cwmode_cur  DB      'AT+CWMODE_CUR=1',13,10,0  ;режим 1 - режим клиента WIFI
 cmd_ipd		DB	'AT+IPD',13,10,0	;+IPD, <id>, <размер>: <данные>
+cmd_cwautoconn	DB      'AT+CWAUTOCONN=0',13,10,0        ;автоматически подключаться к AP (выключить)
+cmd_echooff     DB      'ATE0',13,10,0          ;Выключить эхо
+cmd_reset       DB      'AT+RST',13,10,0        ;перезапустить модуль

@@ -1,3 +1,4 @@
+;encoding cp1251
 	module main
 
 	include "../common/common.mac"
@@ -14,78 +15,162 @@
 
 credentials
 	DB	"ae-pio",0,"aewifi456",0
+	;DB	"asve6s",0,"testtest",0
 
 ;- MAIN PROCEDURE -
-PROG	
+PROG
 	_printw wnd_main				;Основное окно
 	_prints	msg_keys				;Приветсвие
 	;_printcrlf
+	LD A,0						;Бордюр. цвет черный
+      	OUT (254),A
+
 ;	------------------------------------------
-	_prints msg_init
-	_fillzero input_bufer,#FF			
+P1	_prints msg_init
+	_fillzero input_bufer,#FF
 	_zifi_init input_bufer				;Инициализация
+	PUSH	AF
 	_prints input_bufer
+	POP	AF
+	LD	B,0					;не отключаться от AP
+	CP	1
+	JZ	command_error
+	CP	2
+	JZ	command_timeout
+
 	_prints msg_separator
+	CALL	sleep
+
 ;	------------------------------------------
 ;	_prints msg_scanap
-;	_zifi_list_ap input_bufer			;Списов точек доступа
+;	_zifi_list_ap input_bufer			;Список точек доступа
+;	PUSH	AF
 ;	_prints input_bufer
+;	POP	AF
+;	LD	B,0					;не отключаться от AP
+;	CP	1
+;	JZ	command_error
+;	CP	2
+;	JZ	command_timeout
 ;	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_connect_ap
-	_fillzero input_bufer,#FF			
+	_fillzero input_bufer,#FF
 	_zifi_connect_ap input_bufer, credentials	;Подключиться к точке доступа
+	PUSH	AF
 	_prints input_bufer
+	POP	AF
+	LD	B,0					;не отключаться от AP
+	CP	1
+	JZ	command_error
+;	CP	2
+;	JZ	command_timeout				;пока не обрабатываем тут таймаут
 	_prints msg_separator
+	CALL	sleep
+
 ;	------------------------------------------
-	_fillzero input_bufer,#FF			
-	_zifi_current_ip input_bufer			;Показать текущий IP
-	_prints input_bufer
-	_prints msg_separator
+;	_fillzero input_bufer,#FF
+;	_zifi_current_ip input_bufer			;Показать текущий IP
+;	_prints input_bufer
+;	_prints msg_separator
 ;	------------------------------------------
-	_prints msg_ping_ya_ru
-	_fillzero input_bufer,#FF			
-	_zifi_ping input_bufer, addr_ya			;Пингануть хост яндекса
-	_prints input_bufer
-	_prints msg_separator
+;	_prints msg_ping_ya_ru
+;	_fillzero input_bufer,#FF
+;	_zifi_ping input_bufer, addr_ya			;Пингануть хост яндекса
+;	_prints input_bufer
+;	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_openconn_1
-	_fillzero input_bufer,#FF	
+	_fillzero input_bufer,#FF
 	_fillzero rcv_bufer,#FF
 	_fillzero rcv_bufer+#FF,#FF
 	_fillzero rcv_bufer+#1FF,#FF
 	_zifi_open_tcp input_bufer, addr_ya, rcv_bufer,1024	;Открыть соединение 1
+	PUSH	AF
 	_prints input_bufer
+	POP	AF
+	LD	B,1					;отключаться от AP
+	CP	#FF					;#FF значит не установилось соединение (пока нет определение причины отказа)
+	JZ	command_error
+	PUSH	AF
+	_prints msg_connction_id			;вывести номер соединения
+	POP	AF
+	PUSH	AF					;Сохраняем ID соединения
+	_a_hex
+	_printcrlf
 	_prints msg_separator
+	CALL	sleep
 ;	------------------------------------------
+	_fillzero input_bufer,#FF
+	_prints msg_sendrequest				;отправить данные
+	POP	AF					;идентификатор соединения
+	;LD	A,1
+	LD	HL,input_bufer				;буфер для операций и результата
+	LD	DE,data_request				;буфер с данными для отправки
+	LD	BC,data_request_len			;длина отправляемых данных
+	_zifi_send
+	PUSH	AF
+	_prints input_bufer
+	POP	AF
+	LD	B,2					;закрыть соединение и отключаться от AP
+	CP	1
+	JZ	command_error
+	CP	2
+	JZ	command_timeout
+	_prints msg_separator
+	CALL	sleep
+;	------------------------------------------
+	_prints msg_recevedata				;прием данных
+lwair1	_fillzero input_bufer, #FF
+	LD	HL,input_bufer
+lwair	halt
+	_zifi_receve
+	JZ	lwair
+	_prints	input_bufer
+	_zifi_receve					;проверить нет ли чего еще в буфере
+	JR	NZ,lwair1
+
+	_prints msg_separator
+	CALL	sleep
+;	------------------------------------------
+l2d	;_prints msg_separator				;закрытие соединение
 	_prints msg_closeconn_1
 	_fillzero input_bufer,#FF
-	LD	A,1					;Номер канала	
+	LD	A,1					;Номер канала
 	_zifi_close_tcp input_bufer			;Закрыть соединение 1
+	PUSH	AF
 	_prints input_bufer
-	_prints msg_separator
+	POP	AF
+	LD	B,1					;отключаться от AP
+	CP	1
+	JZ	command_error
+	CP	2					;Это не имеет смысла, но пусть будет
+	JZ	command_timeout
+
+l1d	_prints msg_separator
 ;	------------------------------------------
 	_prints msg_disconnect_ap
-	_fillzero input_bufer,#FF			
+	_fillzero input_bufer,#FF
 	_zifi_disconnect_ap input_bufer			;Отключиться от AP
+	PUSH	AF
 	_prints input_bufer
+	POP	AF
+	CP	1
+	JZ	command_error
+	CP	2
+	JZ	command_timeout
+
 	_prints msg_separator
 ;	------------------------------------------
-	
+
 	LD	A,'>'
 	_printc
-
 
 	_cur_on
 
 mloop   ;CALL	check_rcv
 	CALL    spkeyb.CONINW	;main loop entry
 	JZ	mloop		;wait a press key
-	PUSH 	AF
-	_iscmdmode		;if comman mode on go to cmdmodeproc
-	JZ	cmdmodeproc
-	;process terminal mode
-	POP	AF
 	CP	01Dh
 	JZ	exit		;if SS+Q pressed, exit
 	CP	#08		;left cursor key pressed
@@ -96,58 +181,36 @@ mloop   ;CALL	check_rcv
 	JZ	mloop
 	CP	#18		;down cursor key pressed
 	JZ	mloop
-	CP	01Ch		;if Ss+W pressed - terminal command
-	JZ	opencmdmode	
 	CP	#7F		;//delete key pressed
-	JZ	delsymtermmode	
+	JZ	delsymtermmode
 	CP	13		;//enter key pressed
 	JZ	enterkeytermmode
 	CALL	puttotermbufer	;//put char to command bufer and print
 	;_SendChar
-;	LD	A,"*"
-;	_printc
-	JP	mloop
-cmdmodeproc ;process comman mode
-	POP	AF
-	CP	#08		;left cursor key pressed
-	JZ	mloop
-	CP	#19		;right cursor key pressed
-	JZ	mloop
-	CP	#1A		;up cursor key pressed
-	JZ	mloop
-	CP	#18		;down cursor key pressed
-	JZ	mloop
-	CP	01Dh
-	JZ	closecmdmode	;if SS+Q pressed, exit
-	CP	01Ch		;if Ss+W pressed - terminal command
-	JZ	closecmdmode
-	CP	#7F		;//delete key pressed
-	JZ	delsymcmdmode	
-	CP	13		;//enter key pressed
-	JZ	enterkeycmdmode
-	CALL	puttocmdbufer	;//put char to terminal bufer and print
 	JP	mloop
 
-opencmdmode ;open command window
-	LD	A,1		;if terminal command mode is off
-	LD	(mode),A	;turn on termianl mode
+command_error
+	_prints	msg_cmd_error
+	_cur_on
+	LD	A,B
+	OR	A
+	JP	Z,mloop
 	_cur_off
-	_printw	wnd_cmd		;print command window
-	_prints	command_bufer	;print content of command buffer
+	CP	2
+	JP	Z,l2d
+	JP	l1d
+
+command_timeout
+	_prints	msg_cmd_timeout
 	_cur_on
-	JP	mloop
-;----
-closecmdmode ;close the commend window
-	XOR	A
-	LD	(mode),A
-	_cur_off		
-	_endw
-	_cur_on
-	JP	mloop
-;-----
-delsymcmdmode	;delete symbol in command bufer
-	_findzero command_bufer	;//get ptr on last symbol+1 in buffer
-	JR	delsymproc	;//get ptr on last symbol+1 in buffer
+	LD	A,B
+	OR	A
+	JP	Z,mloop
+	_cur_off
+	CP	2
+	JP	Z,l2d
+	JP	l1d
+
 delsymtermmode	;delete symbol in terminal mode
 	_findzero input_bufer	;//get ptr on last symbol+1 in buffer
 delsymproc	;delete symbol main proc
@@ -163,37 +226,12 @@ delsymproc	;delete symbol main proc
 	LD	A,8		;//left again
 	_printc
 	JP	mloop
-;----
-enterkeycmdmode	;enter key pressed in command window. execute command if it exists
-;	_isopencommand  cmd_bufer,eccm1	;//'open'  command
-;	_isclosecommand cmd_bufer,eccm1 ;//'close' command
-	_ishelpcommand  command,eccm1	;//'help' command
-	_isaboutcommand command,eccm1	;//'about' command
-	_isexitcommand command,eccm1	;//'exit' command
-	_clearwindow			;// wrong command:  clear window
-eccm1	_fillzero command_bufer, 100	;clear command buffer
-	JP 	mloop
+
 ;----
 enterkeytermmode	;enter key pressed in terminal window
-	_findzero input_bufer
-	LD	B,A
-	LD	A,13		;/add 13 code for <CR><LF> EOL command
-	LD	(HL),A
-	;_SendChar
-	INC	HL
-	LD	A,10		;/add 10 code for <CR><LF> EOL command
-	LD	(HL),A
-	;_SendChar
-	INC	HL
-	XOR	A
-	LD	(HL),A
-	LD	HL,input_bufer
-;1	LD	A,(HL)
-;	OR	A
-;	JZ	ekcm_nc
-;	_SendChar
-;	INC	HL
-;	JR	1b
+	_ishelpcommand  input_bufer,ekcm_nc	;//'help' command
+	_isaboutcommand input_bufer,ekcm_nc	;//'about' command
+	_isexitcommand input_bufer,ekcm_nc	;//'exit' command
 
 ekcm_nc	_fillzero input_bufer,255
 	_cur_off
@@ -215,52 +253,26 @@ puttobufer	;main procedure for put to bufer;TODO make insert mode with shift con
 	_printc		;out characte
 	RET
 
-exit	_cur_off		
+exit	_cur_off
 	_closew
-	RET
-
-fillzero
-	_fillzero command_bufer, 100
 	RET
 
 init	XOR	A
 	LD 	(mode),A	;set terminal mode
-	IFDEF	TS_ZIFISB
-	_zifi_init
-	RET	Z
-	_prints msg_nozifi
-	ENDIF
-	IFDEF	EVO_RS232
-	LD	HL,1		;//1 - is dividder for 115200 speed; * TODO гзҐбвм ЇаЁ ­ ЇЁб ­ЁЁ ¬®¤г«п Ї®¤ Љ®­¤а вмҐў 
-	_zifi_init
-	ENDIF
 	RET
 
+sleep 	PUSH	BC
+	LD	B,100
+1	HALT
+	DJNZ	1b
+	POP	BC
+	RET
 
 ;/ inctease counter every interrupt
 INCCNTR LD	A,(im_cntr)
 	INC	A
 	LD	(im_cntr),A
 	RET
-
-//check receve info from connection
-check_rcv;
-	_istermmode
-	RET	NZ		;//if terminal mode, then no print error status
-;	IFDEF 	TS_ZIFI
-;rcv1	_input_fifo_status
-;	OR	A
-;	ENDIF
-;	IFDEF	EVO_RS232
-;rcv1	_Check_RX_Owerflow
-;	JZ	1f
-;	_prints msg_rx_owerflow
-;1	_HaveRXData
-;	ENDIF
-;	RET	Z		;//Return if zero
-;	_ReceveChar		;//get char
-;	_printc			;//print it
-;	JR	rcv1
 
 	include "demo_data.asm"
 	include "../strings/strings.a80"

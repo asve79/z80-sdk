@@ -9,7 +9,7 @@ cmd_clear_output_fifo   equ 2
 
 command_reg                	equ #C7EF	;Write - Command Register. Command set depends on API mode selected.
 error_reg                  	equ #C7EF	;Read - Error Register - command execution result code. Depends on command issued.
-data_reg			equ #BFEF	
+data_reg			equ #BFEF
 zifi_input_fifo_reg	        equ #C0EF	;#FF - overload. n - bytes in fifo
 zifi_output_fifo_reg            equ #C1EF	;#FF - output fifo is empty, 0 - output fifo is full
 rs232_input_fifo_reg	        equ #C2EF	;#FF - overload. n - bytes in fifo
@@ -20,13 +20,14 @@ ZIBTR				equ #C5EF	;Input Buffer Threshold Register. Number of bytes in input bu
 ZITOR				equ #C6EF	;Input Buffer Timeout Register. Number of milliseconds after last byte arrived in input buffer when interrupt is triggered if enabled. (Default 0x01)
 
 ;Data Register.
-;Receives byte from input FIFO. 
+;Receives byte from input FIFO.
 ;Input FIFO must not be empty (xIFR > 0). S
-;ends byte into output FIFO. Output FIFO must not be full (xOFR > 0). 
-;Serves both ZiFi and RS-232. To select required device read correspondent FIFO register. 
+;ends byte into output FIFO. Output FIFO must not be full (xOFR > 0).
+;Serves both ZiFi and RS-232. To select required device read correspondent FIFO register.
 ;E.g if ZIFR was read, ZiFi data will be read from DR.
 
-
+;out:
+; A: 0 - ok, 1 - error
 init_rs232
 	PUSH	BC
 	PUSH	DE
@@ -65,7 +66,7 @@ check_output_fifo_status
                         ld	bc,rs232_output_fifo_reg
 cofs                    in	a,(c)
                         or	a		;0 - output FIFO is full
-                        jr	z,cofs          ;wait until free space 
+                        jr	z,cofs          ;wait until free space
                         ret
 
 clear_input_fifo        ld	a,cmd_clear_input_fifo
@@ -84,11 +85,11 @@ rs232_command_result    ld	bc,error_reg
                         in	a,(c)
                         ret
 
-rx_fifo_cnt	ld 	bc,rs232_input_fifo_reg	
+rx_fifo_cnt	ld 	bc,rs232_input_fifo_reg
                	in 	a,(c)
                	RET
 
-;OUT: 
+;OUT:
 ; A - num bytes in output fifo (FF-empty, 0 - FULL)
 tx_fifo_cnt
 		PUSH	BC
@@ -107,7 +108,7 @@ send_fifo_byte  push	AF
 		OR	A
 		JR	Z,1b
                 ;call 	clear_output_fifo
-                        
+
                 ld 	bc,data_reg
                 POP	AF
                 out 	(c),a
@@ -115,4 +116,3 @@ send_fifo_byte  push	AF
 
 
 	endmodule
-
