@@ -112,14 +112,15 @@ ws_timeout	POP	BC				;Код возврата 2 - TIMEOUT
 sectimeout	DB	0				;Значение секунд которое будет считаться наступлением таймаута
 bsecond		DB	0				;начальные секунды
 timeout		DB	10				;таймаут операции в секундах
+;-------------------------------------------------------------------------------
 ;i:
-; (ptr) - казатель на буфер
+; (ptr) - указатель на буфер
 ; DL - эталон, с которым сравниваем
 ; BC - длина строки
 ;o:
 ; A:
 ; 0 - не совпал
-; 1 - совал
+; 1 - совпал
 check_status	PUSH	HL
 		LD	HL,(ptr)
 cstat_loop	LD	A,(DE)
@@ -135,6 +136,17 @@ cstat_loop	LD	A,(DE)
 cstat_nf	XOR	A
 		POP	HL
 		RET
+;-------------------------------------------------------------------------------
+;i:
+; HL - что сравниваем
+; DL - с чем сравниваем (эталон)
+; BC - длина строки
+;o:
+; A:
+; 0 - не совпал
+; 1 - совпал
+check_status_hl	PUSH	HL
+		JP	cstat_loop
 
 msg_ok		DB	10,'OK',13,10
 msg_error	DB	10,'ERROR',13,10
@@ -143,7 +155,7 @@ msg_send_ok	DB	10,'SEND OK',13,10
 ptr		DW	0		;указатель
 connections	DB	0		;счетчик соединений
 registry	DS	10*(1+2+2+2),0	;реестр соединений <id><адрес буфера><максимальный размер буфера><смещение в буфере для записи данных>
-
+;-------------------------------------------------------------------------------
 ;- Взять значение секунд (для отслеживания таймаутов)
 ;o: a - seconds
 getRTCsec 	PUSH	bc
@@ -520,6 +532,10 @@ send1		LD	A,(DE)		;отправить данные в порт. В <BC> разм
 ;	bufer_addr[2]	+1	- адрес буфера
 ;	bufer_size[2]	+3	- крайний адрес буфера, до которого можно писать даныне (bufer_addr + размер буфера)
 ;	offset[2]	+5	- адрес первой ячейки буфера куда можно писать данные (bufer_addr+ptr)
+;(?dev) procs_pg[1]	+6	- номер страницы с процедурами
+;(?deV) rcv_exec[2]	+7	- адрес процедуры, которая запустится при приходе данных в буфер (on_reveved)
+;(?dev) rcv_dis[2]	+9	- адрес процедуры, вызываемой при обрыве соединения (on_disconnect)
+;(?dev) over_exec[2]	+11	- адрес процедуры, вызываемой при достижении конца буфера (on_overflow)
 
 ;-------------------------------------------------------------------------------
 ;Добавить соединение. Просто зарегистрировет параметры, без выделения ID
@@ -742,25 +758,118 @@ rra1		ADD	HL,DE
 		POP	BC
 		RET
 
-;-- Принять данные ------------------------------------------------------------------
+;-- Принять данные -------------------------------------------------------------
 ;i : HL - буфер (временно, до отладки менеджера потоков)
+;  : B -  размер буфера (а больше и ненадо т к в UART-е он 255 байт)
 ;o : HL - ответ
-;  :  A - 0 - если ничего не принято
-;!!!!!!! Отладка. не целевой.
-receve		LD	B,250
-		CALL	uart_ts_zifi.rx_fifo_cnt
+;  :  A - 0 - отработано нормально
+receve		CALL	uart_ts_zifi.rx_fifo_cnt
 		OR	A
 		RET	Z
+		PUSH	HL		;запомним указатель на буфер
+		PUSH	BC
 		CP	B
 		JR	NC, recv1	;if A >= B goto recv1
 		LD	B,A		;if A < B set COUNT B = A
-recv1		CALL	uart_ts_zifi.read_fifo_byte
+recv1		CALL	uart_ts_zifi.read_fifo_byte	;TODO сюда надо прифигачить ф-цию "взять последовательность байт через INIR, чтоб быстрее"
 		LD	(HL),A
 		INC 	HL
 		DJNZ	recv1
+		POP	HL
+		POP	BC
+		CALL	proc_rcv	;анализируем что там внутри TODO: подумать над ситуацией если IPD придет на границе буфера
+		JR	receve		;новый виток, убедимся что новых данных не поступило TODO: подумать, может задать кол-во циклов чтоб при постоянном потоке выходило
+
+;-- Проанализировать буфер, чего ж там пришло. Раскидать данные по буферам -----
+;i : HL - буфер (временно, до отладки менеджера потоков)
+;  : B -  размер буфера (а больше и ненадо т к в UART-е он 255 байт)
+proc_rcv	POP	BC
+		POP	HL		;вспомним указатель на буфер и начнем анализ того, что же там прилетело
+		LD	DE,msg_ipd
+recv2		PUSH	BC
+		LD	BC,5
+		CALL	check_status_hl
+		POP	BC
+		OR	A
+		JR	NZ,recv4	;Если это +IPD, продолжим разбор
+recv3		LD	A,(HL)
+		INC	HL
+		CP	13		;ищем код 13, за которым можно уже проверять наличие команды +IPD
+		JR	Z,recv2
+		DEC	BC
+		JR	NZ,recv3	;TODO еще надо проверять на строку 'N,DISCONNECT' на предмет потери соединения
+		POP	DE		;если так ничего и не нашли (?)
+		POP	HL
+		LD	A,1		;это для покателя что все-таки что-то обработали
 		RET
+recv4		LD	DE,5
+		ADD	HL,DE
+		LD	A,(HL)
+		SUB	'0'
+		LD	(procrcvdescr),A	;Запоминим идентифиактор пока ХЗ зачем
+		INC	HL
+		CALL	parcesize		;берем размер данных
+		INC	HL			;Теперь указываем на начало данных
+		CALL	putdata			;пишем данные в буфер
+		POP	HL
+		POP	DE
+		RET
+procrcvdescr	DB	0
+
+;== Парсинг числа в строке
+;i: HL - буфер с указателем на начало числа
+;o: (datasize) - число 4-х байтовое
+;   HL - указатель на след символ после числа
+parcesize	PUSH	AF
+		PUSH	BC
+		XOR	A
+		LD	(datasizebuf+0),A
+		LD	(datasizebuf+1),A
+		LD	(datasizebuf+2),A
+		LD	(datasizebuf+3),A
+6		LD	A,(HL)
+		CP	'0'			;Если A < code('0')
+		JR	C,7f			;значит число кончилось, выход
+		CP	'9'+1			;Если A > code('9'+1)
+		JR	NC,7f			;значит число кончилось, выход
+		PUSH	HL
+		SUB	'0'
+
+		PUSH	AF
+		LD	A,(datasizebuf+0)
+		LD	L,A
+		LD	A,(datasizebuf+1)
+		LD	H,A
+		LD	A,(datasizebuf+2)
+		LD	E,A
+		LD	A,(datasizebuf+3)
+		LD	D,A
+		CALL	limul10
+		POP	AF
+		ADD	A,L
+		LD	L,A
+		LD	A,L
+		LD	(datasizebuf+0),A
+		LD	A,H
+		LD	(datasizebuf+1),A
+		LD	A,E
+		LD	(datasizebuf+2),A
+		LD	A,D
+		LD	(datasizebuf+3),A
+		POP	HL
+		INC	HL
+		JR	6b
+7
+		POP	BC
+		POP	AF
+		LD	DE,datasizebuf
+		RET
+datasizebuf	DB 0,0,0,0
+
+msg_ipd		DB	'+IPD,'
 
 		include	"commands.a80"
 		include "../sockets/uart_ts_zifi.a80"
 		include "../strings/int2str.asm"
+		include "../math/limul10.asm"
 		endmodule
