@@ -1,53 +1,53 @@
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_init buf
-	LD	HL,buf
-	CALL	zifi.init
-	ENDM
+			MACRO	_zifi_init buf
+			LD	HL,buf
+			CALL	zifi.init
+			ENDM
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_list_ap buf
-	LD	HL,buf
-	CALL	zifi.list_ap
-	ENDM
+			MACRO	_zifi_list_ap buf
+			LD	HL,buf
+			CALL	zifi.list_ap
+			ENDM
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_connect_ap buf, cred
-	LD	HL,buf
-	LD	DE,cred
-	CALL	zifi.connect_ap
-	ENDM
+			MACRO	_zifi_connect_ap buf, cred
+			LD	HL,buf
+			LD	DE,cred
+			CALL	zifi.connect_ap
+			ENDM
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_current_ip buf
-	LD	HL,buf
-	CALL	zifi.current_ip
-	ENDM
+			MACRO	_zifi_current_ip buf
+			LD	HL,buf
+			CALL	zifi.current_ip
+			ENDM
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_disconnect_ap buf
-	LD	HL,buf
-	CALL	zifi.disconnect_ap
-	ENDM
+			MACRO	_zifi_disconnect_ap buf
+			LD	HL,buf
+			CALL	zifi.disconnect_ap
+			ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_open_tcp oper_buf, addr, inp_buf, max_size
-	LD	HL,oper_buf
-	LD	DE,addr
-	EXX
-	LD	DE,inp_buf
-	EXX
-	LD	BC, max_size
-	CALL	zifi.open_tcp
-	ENDM
+			MACRO	_zifi_open_tcp oper_buf, addr, inp_buf, max_size
+			LD		HL,oper_buf
+			LD		DE,addr
+			EXX
+			LD		DE,inp_buf
+			EXX
+			LD		BC, max_size
+			CALL	zifi.open_tcp
+			ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_ping buf, addr
-	LD	HL,buf
-	LD	DE,addr
-	CALL	zifi.ping
-	ENDM
+			MACRO	_zifi_ping buf, addr
+			LD	HL,buf
+			LD	DE,addr
+			CALL	zifi.ping
+			ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_close_tcp buf
-	LD	HL,buf
-	CALL	zifi.close_tcp
-	ENDM
+			MACRO	_zifi_close_tcp buf
+			LD		HL,buf
+			CALL	zifi.close_tcp
+			ENDM
 
 ;------------------------------------------------------------------------------------
 ;-- Отправить данные ----------------------------------------------------------------
@@ -57,11 +57,13 @@
 ;  : BC - размер
 ;o : HL - Ответ
 ;  :  A - 0 - OK, 1- ERROR
-	MACRO	_zifi_send
-	CALL	zifi.send
-	ENDM
+			MACRO	_zifi_send
+			CALL	zifi.send
+			ENDM
 
 ;------------------------------------------------------------------------------------
-	MACRO	_zifi_receve
-	CALL	zifi.receve
-	ENDM
+;o : HL - ответ
+;  :  A - 0 - отработано нормально
+			MACRO	_zifi_receve
+			CALL	zifi.receve
+			ENDM

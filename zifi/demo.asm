@@ -1,4 +1,4 @@
-	device zxspectrum128
+			device zxspectrum128
 
 ; Memory layout:
 ; 0000-3FFF - ROM (16Kb)
@@ -13,84 +13,84 @@
 ; BFD3-BFFF - Unused
 ; C000-FFFF - Paging area (16Kb)
 
-	org 	8300h
+		org 	8300h
 _start
 
-STACK	EQU	0BE00H
-IVT	EQU	0BE00H
+STACK		EQU	0BE00H
+IVT		EQU	0BE00H
 ; Data to fill into IVT. Determines
 ; interrupt vector location
-IVTDAT	EQU	0BFH
+IVTDAT		EQU	0BFH
 
-	DI
-	IM	2
-	LD	SP,STACK
-	LD	A,10H
-	LD	BC,07FFDH
-	OUT	(C),A
-	LD	HL,IVT
-	LD	DE,IVT+1
-	LD	(HL),IVTDAT
-	LD	BC,0100H
-	LDIR	;Fill the IVT
-	LD	HL,ISRLOC
-	LD	DE,ISR
-	LD	BC,ISREND-ISR
-	LDIR	;Transfer the ISR to its location
-	LD	A,#BE ;(IVT+1) ;high byte
-	LD	I,A
-	EI
+		DI
+		IM	2
+		LD	SP,STACK
+		LD	A,10H
+		LD	BC,07FFDH
+		OUT	(C),A
+		LD	HL,IVT
+		LD	DE,IVT+1
+		LD	(HL),IVTDAT
+		LD	BC,0100H
+		LDIR	;Fill the IVT
+		LD	HL,ISRLOC
+		LD	DE,ISR
+		LD	BC,ISREND-ISR
+		LDIR	;Transfer the ISR to its location
+		LD	A,#BE ;(IVT+1) ;high byte
+		LD	I,A
+		EI
 
-	LD	HL,5B00H ;init memory manager
-	LD	BC,2800H
-	CALL	dmm.IDMM
+		LD	HL,5B00H ;init memory manager
+		LD	BC,2800H
+		CALL	dmm.IDMM
 
-	CALL	main.PROG
-; After the program quits, it returns here.
-; Perform a reset into the TR-DOS
-	LD	HL,0
-	PUSH	HL
-	JP	3D2FH
+		CALL	main.PROG
+	; After the program quits, it returns here.
+	; Perform a reset into the TR-DOS
+		LD	HL,0
+		PUSH	HL
+		JP	3D2FH
 
-ISRLOC	PHASE	IVTDAT*256+IVTDAT
-ISR	PUSH	AF
-	PUSH	BC
-	PUSH	DE
-	PUSH	HL
-	PUSH	IX
-	CALL	spkeyb.INTKEY
-	CALL	wind.INTCUR
-	CALL	main.INCCNTR
-	POP	IX
-	POP	HL
-	POP	DE
-	POP	BC
-	POP	AF
-	EI
-	RET
-ISREND	DEPHASE
+ISRLOC		PHASE	IVTDAT*256+IVTDAT
+ISR		PUSH	AF
+		PUSH	BC
+		PUSH	DE
+		PUSH	HL
+		PUSH	IX
+		CALL	spkeyb.INTKEY
+		CALL	wind.INTCUR
+		CALL	main.INCCNTR
+		POP	IX
+		POP	HL
+		POP	DE
+		POP	BC
+		POP	AF
+		EI
+		RET
+ISREND		DEPHASE
 
 ; Fatal error routine. We could print
 ; a message here but we just halt.
 SYSERR:
-	LD	A,2
-	OUT	(254),A
-	DI
-	HALT
+		LD	A,2
+		OUT	(254),A
+		DI
+		HALT
 
 
-	include "../windows_bmw/spkeyb40.a80"
-	include "../windows_bmw/edznak.a80"
-        include "../windows_bmw/wind.a80"
-        include "demo_main.asm"
-	include "../windows_bmw/dmm.a80"
+		include "../windows_bmw/spkeyb40.a80"
+		include "../windows_bmw/edznak.a80"
+		include "../windows_bmw/wind.a80"
+		include "demo_main.asm"
+		include "../windows_bmw/dmm.a80"
 
 _end
 _len	=	$-_start
 
-	savesna	SNAFILE, _start
-	IFDEF	HOBFILE
-	savehob HOBFILE, HOBFILEIN, _start, _len
-	ENDIF
+		savesna	SNAFILE, _start
+		IFDEF	HOBFILE
+		savehob HOBFILE, HOBFILEIN, _start, _len
+		ENDIF
 
 END

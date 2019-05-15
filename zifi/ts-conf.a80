@@ -16,16 +16,16 @@ pCMOS_CONF	EQU	#EFF7
 ;   A=2 - TIMEOUT
 ;   A=3 - 'ready'
 wait_status	DI
-		PUSH	BC
-		PUSH	DE
-		PUSH	HL
-		LD	(ptr),HL
-		DEC	HL
-		call	getRTCsec
-		DEC	A
-		CP	#FF
-		JR	NZ,ws19
-		LD	A,59
+			PUSH	BC
+			PUSH	DE
+			PUSH	HL
+			LD	(ptr),HL
+			DEC	HL
+			call	getRTCsec
+			DEC	A
+			CP	#FF
+			JR	NZ,ws19
+			LD	A,59
 ws19		LD	(bsecond),A			;откуда начался отсчет. нужно для контролья перехода 59->0
 		;PUSH	AF
 		;_a_hex
@@ -759,33 +759,33 @@ rra1		ADD	HL,DE
 		RET
 
 ;-- Принять данные -------------------------------------------------------------
-;i : HL - буфер (временно, до отладки менеджера потоков)
-;  : B -  размер буфера (а больше и ненадо т к в UART-е он 255 байт)
 ;o : HL - ответ
 ;  :  A - 0 - отработано нормально
 receve		CALL	uart_ts_zifi.rx_fifo_cnt
 		OR	A
 		RET	Z
-		PUSH	HL		;запомним указатель на буфер
 		PUSH	BC
-		CP	B
-		JR	NC, recv1	;if A >= B goto recv1
+		LD	HL,uartbufer	;внутренний бкфер для операций
+		LD	B,#FF		;его максимальный размер
+		PUSH	HL		;запомним указатель на буфер
 		LD	B,A		;if A < B set COUNT B = A
+		PUSH	BC
 recv1		CALL	uart_ts_zifi.read_fifo_byte	;TODO сюда надо прифигачить ф-цию "взять последовательность байт через INIR, чтоб быстрее"
 		LD	(HL),A
 		INC 	HL
 		DJNZ	recv1
-		POP	HL
 		POP	BC
+		POP	HL
 		CALL	proc_rcv	;анализируем что там внутри TODO: подумать над ситуацией если IPD придет на границе буфера
+		POP	BC
 		JR	receve		;новый виток, убедимся что новых данных не поступило TODO: подумать, может задать кол-во циклов чтоб при постоянном потоке выходило
 
 ;-- Проанализировать буфер, чего ж там пришло. Раскидать данные по буферам -----
 ;i : HL - буфер (временно, до отладки менеджера потоков)
-;  : B -  размер буфера (а больше и ненадо т к в UART-е он 255 байт)
-proc_rcv	POP	BC
-		POP	HL		;вспомним указатель на буфер и начнем анализ того, что же там прилетело
-		LD	DE,msg_ipd
+;  : B -  сколько данных в буфере
+proc_rcv	PUSH	HL
+		PUSH	DE
+		LD	DE,msg_ipd	;'+IPD,'
 recv2		PUSH	BC
 		LD	BC,5
 		CALL	check_status_hl
@@ -794,15 +794,14 @@ recv2		PUSH	BC
 		JR	NZ,recv4	;Если это +IPD, продолжим разбор
 recv3		LD	A,(HL)
 		INC	HL
-		CP	13		;ищем код 13, за которым можно уже проверять наличие команды +IPD
+		CP	10		;ищем код 10, за которым можно уже проверять наличие команды +IPD
 		JR	Z,recv2
-		DEC	BC
-		JR	NZ,recv3	;TODO еще надо проверять на строку 'N,DISCONNECT' на предмет потери соединения
+		DJNZ	recv3	;TODO еще надо проверять на строку 'N,DISCONNECT' на предмет потери соединения
 		POP	DE		;если так ничего и не нашли (?)
 		POP	HL
-		LD	A,1		;это для покателя что все-таки что-то обработали
+		LD	A,1		;A=1 не принемаем даныне из команды IPD
 		RET
-recv4		LD	DE,5
+recv4		LD	DE,5		;Тут уже понимаем что пришла команда IDP и за ней идут идентификатор и данные
 		ADD	HL,DE
 		LD	A,(HL)
 		SUB	'0'
@@ -810,9 +809,9 @@ recv4		LD	DE,5
 		INC	HL
 		CALL	parcesize		;берем размер данных
 		INC	HL			;Теперь указываем на начало данных
-		CALL	putdata			;пишем данные в буфер
-		POP	HL
+		CALL	putdata			;пишем данные в буфер a=descriptor, bc - length, hl - from bufer
 		POP	DE
+		POP	HL
 		RET
 procrcvdescr	DB	0
 
@@ -864,7 +863,8 @@ parcesize	PUSH	AF
 		POP	AF
 		LD	DE,datasizebuf
 		RET
-datasizebuf	DB 0,0,0,0
+datasizebuf	DB 	0,0,0,0
+uartbufer	DS	#FF,0
 
 msg_ipd		DB	'+IPD,'
 
