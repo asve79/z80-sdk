@@ -1,3 +1,7 @@
 {
-    "editor.tabSize": 8
+    "editor.tabSize": 8,
+    "files.associations": {
+        "*.a80": "z80-asm",
+        "*.mac": "z80-asm"
+    }
 }
