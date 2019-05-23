@@ -1,0 +1,57 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Zifi Demo Build",
+            "type": "shell",
+            "windows": {
+                "command": "zifi\\_make.bat"
+            },
+            "linux": {
+                "command": "zifi/_make.sh"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true
+            },
+            "problemMatcher" : {
+                "fileLocation": ["relative", "${workspaceFolder}\\zifi"],
+                "pattern": {
+                    //"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "regexp" : "([0-9a-zA-Z._-]+).(\\d+).:\\serror:\\s(.*)",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                }
+            }
+        },
+        {
+            "label": "Zifi Demo Run",
+            "type": "shell",
+            "windows": {
+                "command": "zifi\\_run.bat"
+            },
+            "linux": {
+                "command": "zifi/_run.sh"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "focus": true
+            },
+            "problemMatcher" : []
+        }
+
+    ]
+}

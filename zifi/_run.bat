@@ -1,10 +1,10 @@
-set here=%CD%
+set here=%CD%\zifi
 set prog=demo-ts-conf.sna
 set labels=demo-ts-conf.lab
 set unreal_path=c:\zx-speccy\Unreal
 set unreal=%unreal_path%\unreal.exe
 
-echo test
+cd zifi
 
 for %%i in (%prog%) do (
  echo %%i
@@ -13,8 +13,6 @@ for %%i in (%prog%) do (
   goto 1
  )
 )
-
-echo test1
 
 if exist %unreal%\%labels% (
  delete %unreal%\%labels%

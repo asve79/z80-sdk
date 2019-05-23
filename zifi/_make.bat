@@ -2,6 +2,8 @@ set prog=demo-ts-conf
 rem #%frompage=02
 rem #%topage=61
 
+echo "test"
+cd zifi
 for %%i in ( %prog%.asm ) do sjasmplus --labels %%i
 
 if EXIST %prog%.lab (

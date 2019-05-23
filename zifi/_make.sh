@@ -6,6 +6,8 @@ prog="demo-ts-conf"
 #frompage=02
 #topage=61
 
+cd zifi
+
 for i in ${prog}.asm; do
  sjasmplus --labels $i
 done

@@ -1,4 +1,3 @@
-;encoding cp1251
 		module main
 
 		include "../common/common.mac"
@@ -19,20 +18,20 @@ credentials
 
 ;- MAIN PROCEDURE -
 PROG
-		_printw wnd_main				;Основное окно
-		_prints	msg_keys				;Приветсвие
+		_printw wnd_main				;РћСЃРЅРѕРІРЅРѕРµ РѕРєРЅРѕ
+		_prints	msg_keys				;РџСЂРёРІРµС‚СЃРІРёРµ
 		;_printcrlf
-		LD A,0						;Бордюр. цвет черный
+		LD A,0						;Р‘РѕСЂРґСЋСЂ. С†РІРµС‚ С‡РµСЂРЅС‹Р№
       	OUT (254),A
 
 ;	------------------------------------------
 P1		_prints msg_init
 		_fillzero input_bufer,#FF
-		_zifi_init input_bufer				;Инициализация
+		_zifi_init input_bufer				;РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ
 		PUSH	AF
 		_prints input_bufer
 		POP	AF
-		LD	B,0					;не отключаться от AP
+		LD	B,0					;РЅРµ РѕС‚РєР»СЋС‡Р°С‚СЊСЃСЏ РѕС‚ AP
 		CP	1
 		JZ	command_error
 		CP	2
@@ -44,11 +43,11 @@ P1		_prints msg_init
 		_cur_off
 ;	------------------------------------------
 ;	_prints msg_scanap
-;	_zifi_list_ap input_bufer			;Список точек доступа
+;	_zifi_list_ap input_bufer			;РЎРїРёСЃРѕРє С‚РѕС‡РµРє РґРѕСЃС‚СѓРїР°
 ;	PUSH	AF
 ;	_prints input_bufer
 ;	POP	AF
-;	LD	B,0					;не отключаться от AP
+;	LD	B,0					;РЅРµ РѕС‚РєР»СЋС‡Р°С‚СЊСЃСЏ РѕС‚ AP
 ;	CP	1
 ;	JZ	command_error
 ;	CP	2
@@ -57,28 +56,28 @@ P1		_prints msg_init
 ;	------------------------------------------
 		_prints msg_connect_ap
 		_fillzero input_bufer,#FF
-		_zifi_connect_ap input_bufer, credentials	;Подключиться к точке доступа
+		_zifi_connect_ap input_bufer, credentials	;РџРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ Рє С‚РѕС‡РєРµ РґРѕСЃС‚СѓРїР°
 		PUSH	AF
 		_prints input_bufer
 		POP	AF
-		LD	B,0					;не отключаться от AP
+		LD	B,0					;РЅРµ РѕС‚РєР»СЋС‡Р°С‚СЊСЃСЏ РѕС‚ AP
 		CP	1
 		JZ	command_error
 ;	CP	2
-;	JZ	command_timeout				;пока не обрабатываем тут таймаут
+;	JZ	command_timeout				;РїРѕРєР° РЅРµ РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј С‚СѓС‚ С‚Р°Р№РјР°СѓС‚
 		_prints msg_separator
 		_cur_on
 		CALL	sleep
 		_cur_off
 ;	------------------------------------------
 ;	_fillzero input_bufer,#FF
-;	_zifi_current_ip input_bufer			;Показать текущий IP
+;	_zifi_current_ip input_bufer			;РџРѕРєР°Р·Р°С‚СЊ С‚РµРєСѓС‰РёР№ IP
 ;	_prints input_bufer
 ;	_prints msg_separator
 ;	------------------------------------------
 ;	_prints msg_ping_ya_ru
 ;	_fillzero input_bufer,#FF
-;	_zifi_ping input_bufer, addr_ya			;Пингануть хост яндекса
+;	_zifi_ping input_bufer, addr_ya			;РџРёРЅРіР°РЅСѓС‚СЊ С…РѕСЃС‚ СЏРЅРґРµРєСЃР°
 ;	_prints input_bufer
 ;	_prints msg_separator
 ;	------------------------------------------
@@ -87,17 +86,17 @@ P1		_prints msg_init
 		_fillzero rcv_bufer,#FF
 		_fillzero rcv_bufer+#FF,#FF
 		_fillzero rcv_bufer+#1FF,#FF
-		_zifi_open_tcp input_bufer, addr_ya, rcv_bufer,1024	;Открыть соединение 1
+		_zifi_open_tcp input_bufer, addr_ya, rcv_bufer,1024	;РћС‚РєСЂС‹С‚СЊ СЃРѕРµРґРёРЅРµРЅРёРµ 1
 		PUSH	AF
 		_prints input_bufer
 		POP	AF
-		LD	B,1					;отключаться от AP
-		CP	#FF					;#FF значит не установилось соединение (пока нет определение причины отказа)
+		LD	B,1					;РѕС‚РєР»СЋС‡Р°С‚СЊСЃСЏ РѕС‚ AP
+		CP	#FF					;#FF Р·РЅР°С‡РёС‚ РЅРµ СѓСЃС‚Р°РЅРѕРІРёР»РѕСЃСЊ СЃРѕРµРґРёРЅРµРЅРёРµ (РїРѕРєР° РЅРµС‚ РѕРїСЂРµРґРµР»РµРЅРёРµ РїСЂРёС‡РёРЅС‹ РѕС‚РєР°Р·Р°)
 		JZ	command_error
 		PUSH	AF
-		_prints msg_connction_id			;вывести номер соединения
+		_prints msg_connction_id			;РІС‹РІРµСЃС‚Рё РЅРѕРјРµСЂ СЃРѕРµРґРёРЅРµРЅРёСЏ
 		POP	AF
-		PUSH	AF					;Сохраняем ID соединения
+		PUSH	AF					;РЎРѕС…СЂР°РЅСЏРµРј ID СЃРѕРµРґРёРЅРµРЅРёСЏ
 		_a_hex
 		_printcrlf
 		_prints msg_separator
@@ -106,17 +105,17 @@ P1		_prints msg_init
 		_cur_off
 	;	------------------------------------------
 		_fillzero input_bufer,#FF
-		_prints msg_sendrequest				;отправить данные
-		POP	AF					;идентификатор соединения
+		_prints msg_sendrequest				;РѕС‚РїСЂР°РІРёС‚СЊ РґР°РЅРЅС‹Рµ
+		POP	AF					;РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ СЃРѕРµРґРёРЅРµРЅРёСЏ
 		;LD	A,1
-		LD	HL,input_bufer				;буфер для операций и результата
-		LD	DE,data_request				;буфер с данными для отправки
-		LD	BC,data_request_len			;длина отправляемых данных
+		LD	HL,input_bufer				;Р±СѓС„РµСЂ РґР»СЏ РѕРїРµСЂР°С†РёР№ Рё СЂРµР·СѓР»СЊС‚Р°С‚Р°
+		LD	DE,data_request				;Р±СѓС„РµСЂ СЃ РґР°РЅРЅС‹РјРё РґР»СЏ РѕС‚РїСЂР°РІРєРё
+		LD	BC,data_request_len			;РґР»РёРЅР° РѕС‚РїСЂР°РІР»СЏРµРјС‹С… РґР°РЅРЅС‹С…
 		_zifi_send
 		PUSH	AF
 		_prints input_bufer
 		POP	AF
-		LD	B,2					;закрыть соединение и отключаться от AP
+		LD	B,2					;Р·Р°РєСЂС‹С‚СЊ СЃРѕРµРґРёРЅРµРЅРёРµ Рё РѕС‚РєР»СЋС‡Р°С‚СЊСЃСЏ РѕС‚ AP
 		CP	1
 		JZ	command_error
 		CP	2
@@ -126,14 +125,14 @@ P1		_prints msg_init
 		CALL	sleep
 		_cur_off
 ;	------------------------------------------
-		_prints msg_recevedata				;прием данных
+		_prints msg_recevedata				;РїСЂРёРµРј РґР°РЅРЅС‹С…
 lwair1		_fillzero input_bufer, #FF
 		LD	HL,input_bufer
 lwair		halt
 		_zifi_receve
 		JZ	lwair
 		_prints	input_bufer
-		_zifi_receve					;проверить нет ли чего еще в буфере
+		_zifi_receve					;РїСЂРѕРІРµСЂРёС‚СЊ РЅРµС‚ Р»Рё С‡РµРіРѕ РµС‰Рµ РІ Р±СѓС„РµСЂРµ
 		JR	NZ,lwair1
 
 		_prints msg_separator
@@ -141,25 +140,25 @@ lwair		halt
 		CALL	sleep
 		_cur_off
 ;	------------------------------------------
-l2d	;_prints msg_separator				;закрытие соединение
+l2d	;_prints msg_separator				;Р·Р°РєСЂС‹С‚РёРµ СЃРѕРµРґРёРЅРµРЅРёРµ
 		_prints msg_closeconn_1
 		_fillzero input_bufer,#FF
-		LD	A,1					;Номер канала
-		_zifi_close_tcp input_bufer			;Закрыть соединение 1
+		LD	A,1					;РќРѕРјРµСЂ РєР°РЅР°Р»Р°
+		_zifi_close_tcp input_bufer			;Р—Р°РєСЂС‹С‚СЊ СЃРѕРµРґРёРЅРµРЅРёРµ 1
 		PUSH	AF
 		_prints input_bufer
 		POP	AF
-		LD	B,1					;отключаться от AP
+		LD	B,1					;РѕС‚РєР»СЋС‡Р°С‚СЊСЃСЏ РѕС‚ AP
 		CP	1
 		JZ	command_error
-		CP	2					;Это не имеет смысла, но пусть будет
+		CP	2					;Р­С‚Рѕ РЅРµ РёРјРµРµС‚ СЃРјС‹СЃР»Р°, РЅРѕ РїСѓСЃС‚СЊ Р±СѓРґРµС‚
 		JZ	command_timeout
 
 l1d	_prints msg_separator
 ;	------------------------------------------
 		_prints msg_disconnect_ap
 		_fillzero input_bufer,#FF
-		_zifi_disconnect_ap input_bufer			;Отключиться от AP
+		_zifi_disconnect_ap input_bufer			;РћС‚РєР»СЋС‡РёС‚СЊСЃСЏ РѕС‚ AP
 		PUSH	AF
 		_prints input_bufer
 		POP	AF
