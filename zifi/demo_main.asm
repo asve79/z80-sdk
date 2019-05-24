@@ -16,14 +16,74 @@ credentials
 		DB	"ae-pio",0,"aewifi456",0
 		;DB	"asve6s",0,"testtest",0
 
+
+test_data	DB	"+IPD,0,100:"
+		DB	"1234567890"
+		DB	"1234567890"
+		DB	"1234567890"
+		DB	"1234567890"
+		DB	"1234567890"
+		DB	"1234567890"
+		DB	"1234567890"
+		DB	"1234567890"
+		DB	"1234567890"
+		DB	"1234567890"
+		DB	"+IPD,1,100:"
+		DB	"0000000000"
+		DB	"1111111111"
+		DB	"2222222222"
+		DB	"3333333333"
+		DB	"4444444444"
+		DB	"5555555555"
+		DB	"6666666666"
+		DB	"7777777777"
+		DB	"8888888888"
+		DB	"9999999999"
+		DB	0
+
+test_buff	DS	255,0		;Для тестирования. Тут будут появляться данные
+test_buff2	DS	255,0		;Для тестирования. Тут будут появляться данные
+
 ;- MAIN PROCEDURE -
 PROG
 		_printw wnd_main				;Основное окно
 		_prints	msg_keys				;Приветсвие
 		;_printcrlf
 		LD A,0						;Бордюр. цвет черный
-      	OUT (254),A
+      		OUT (254),A
+		_cur_off
+		;_prints test_data
+		_zifi_init input_bufer
+;-------------------------------------------------		;Тестирование обработчика данных		
+		LD	BC,255
+		EXX
+		LD	DE,test_buff
+		EXX
+		CALL	zifi.add_connection			;Добавим соединение 0. Заодно проверим как работает )
+		CALL	zifi.get_id_connection
+		LD	BC,255
+		EXX
+		LD	DE,test_buff2
+		EXX
+		CALL	zifi.add_connection			;Добавим соединение 1. Заодно проверим как работает )
+		CALL	zifi.get_id_connection
+		CALL	sleep
+		_prints test_data
 
+		LD	B,111*2
+		LD	HL,test_data
+		CALL	zifi.proc_rcv
+		CALL	sleep
+		_printcrlf
+		_printcrlf
+		_prints	test_buff
+		_printcrlf
+		_prints	test_buff2
+		_prints msg_done
+		_cur_on
+TL1		HALT
+		JR	TL1
+msg_done	DB	13,"Done. You can halt system",0
 ;	------------------------------------------
 P1		_prints msg_init
 		_fillzero input_bufer,#FF
