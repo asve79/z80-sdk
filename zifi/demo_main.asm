@@ -17,7 +17,7 @@ credentials
 		;DB	"asve6s",0,"testtest",0
 
 
-test_data	DB	"+IPD,0,100:"
+test_data	DB	"+IPD,2,100:"
 		DB	"1234567890"
 		DB	"1234567890"
 		DB	"1234567890"
@@ -28,7 +28,7 @@ test_data	DB	"+IPD,0,100:"
 		DB	"1234567890"
 		DB	"1234567890"
 		DB	"1234567890"
-		DB	"+IPD,1,100:"
+		DB	"+IPD,0,100:"
 		DB	"0000000000"
 		DB	"1111111111"
 		DB	"2222222222"
