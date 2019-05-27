@@ -1,5 +1,14 @@
 		module zifi
 
+;Структура реестра (14 байт)
+;	descriptor[1]	+0	- дескриптор
+;	bufer_addr[2]	+1	- адрес буфера
+;	bufer_size[2]	+3	- крайний адрес буфера, до которого можно писать даныне (bufer_addr + размер буфера)
+;	offset[2]	+5	- адрес первой ячейки буфера куда можно писать данные (bufer_addr+ptr)
+;(todo) procs_pg[1]	+7	- номер страницы с процедурами
+;(todo) rcv_exec[2]	+8	- адрес процедуры, которая запустится при приходе данных в буфер (on_reveved)
+;(todo) rcv_dis[2]	+10	- адрес процедуры, вызываемой при обрыве соединения (on_disconnect)
+;(todo) over_exec[2]	+12	- адрес процедуры, вызываемой при достижении конца буфера (on_overflow)
 
 pCMOS_ADDR	EQU	#DFF7
 pCMOS_DATA	EQU	#BFF7
@@ -16,16 +25,16 @@ pCMOS_CONF	EQU	#EFF7
 ;   A=2 - TIMEOUT
 ;   A=3 - 'ready'
 wait_status	DI
-			PUSH	BC
-			PUSH	DE
-			PUSH	HL
-			LD	(ptr),HL
-			DEC	HL
-			call	getRTCsec
-			DEC	A
-			CP	#FF
-			JR	NZ,ws19
-			LD	A,59
+		PUSH	BC
+		PUSH	DE
+		PUSH	HL
+		LD	(ptr),HL
+		DEC	HL
+		call	getRTCsec
+		DEC	A
+		CP	#FF
+		JR	NZ,ws19
+		LD	A,59
 ws19		LD	(bsecond),A			;откуда начался отсчет. нужно для контролья перехода 59->0
 		;PUSH	AF
 		;_a_hex
@@ -154,7 +163,7 @@ msg_ready	DB	10,'ready',13,10
 msg_send_ok	DB	10,'SEND OK',13,10
 ptr		DW	0		;указатель
 connections	DB	0		;счетчик соединений
-registry	DS	10*(1+2+2+2),0	;реестр соединений <id><адрес буфера><максимальный размер буфера><смещение в буфере для записи данных>
+registry	DS	10*14,0	;реестр соединений 
 ;-------------------------------------------------------------------------------
 ;- Взять значение секунд (для отслеживания таймаутов)
 ;o: a - seconds
@@ -202,7 +211,7 @@ init		PUSH	HL
 		LD	HL,registry
 		LD	(HL),#FF
 		LD	DE,registry+1
-		LD	BC,10*(1+2+2+2)-1	;возможно 10 (0-9) соединений (формат реестра: ID, addr_buf, size_buf, ptr)
+		LD	BC,10*14-1		;возможно 10 (0-9) соединений
 		LDIR				;Заполнить реестр символами #FF
 		CALL	uart_ts_zifi.init
 		OR	A
@@ -547,11 +556,13 @@ add_connection
 		PUSH	HL
 		PUSH	DE
 		PUSH	BC
+		LD	DE,14		;размер буфера
 		LD	B,0		;счетчик
 		LD	HL,registry
 a_conn1		LD	A,(HL)
 		CP	#FF		;смотрим свободный слот или нет (FF - свободен)
 		JR	Z, a_conn2
+		ADD	HL,DE		;указываем на след запись в реестре
 		INC	B
 		LD	A,B
 		CP	10		;проверка что не больше 10 (0-9)
@@ -561,10 +572,11 @@ a_conn1		LD	A,(HL)
 		POP	HL
 		LD	A,1
 		RET
-a_conn2		POP	BC		;Тут уже пишем в реестр. Восстанавливаем значение размера буфера
+a_conn2					;Тут уже пишем в реестр.
+		POP	BC		;Восстанавливаем значение размера буфера
 		PUSH	IX
-		PUSH	HL		;В IX указатель на структуру в реестре
-		POP	IX
+		PUSH	HL		
+		POP	IX		;В IX указатель на структуру в реестре
 		EXX
 		PUSH	DE		
 		EXX
@@ -589,13 +601,13 @@ get_id_connection
 		PUSH	DE
 		PUSH	HL
 		LD	HL,registry
-		LD	B,1
-		LD	DE,9
+		LD	B,0
+		LD	DE,14		;размер служебной стукрутны в байтах пока get_id_connection
 gic1		LD	A,(HL)
 		CP	#FF		;искать первый свободный слот (отмечен FF)
 		JR	Z,gic3
 		LD	A,B
-		CP	10		;проверка что не вышли за 10 дескрипторов
+		CP	9		;проверка что не вышли за 10 дескрипторов
 		JR	Z,gic4
 		ADD	HL,DE
 		INC	B
@@ -629,11 +641,19 @@ fid_e		POP	HL
 ;   : BC - length
 ;o  :  A - descriptor(1-9) - OK, OR #FF - ERROR (Not found or owerflow)
 ;   : BC - сколько было записано
-putdata		PUSH	DE		;(*1)общее сохранение
+putdata		PUSH	AF
+		PUSH	AF
+		LD	A,"*"
+		_printc
+		POP	AF
+		_a_hex
+		POP	AF	
+
+		PUSH	DE		;(*1)общее сохранение
 		PUSH	HL
 		PUSH	IX
 		EX	DE,HL		;Тпереь в DE адрес откуда будем читать
-		CALL	retreqaddr
+		CALL	retreqaddr	;вернуть указать на запись в реестре
 		LD	A,(HL)
 		PUSH	AF		;(*2) фиксируем дескриптор
 		CP	#FF		;проверим есть ли дескриптор
@@ -745,14 +765,13 @@ resetptr	PUSH	HL
 ;i : A - desctiptor
 ;o : HL - адрес записи в реестре
 retreqaddr	LD	HL,registry
-		DEC	A
-		CP	#FF
-		RET	Z
-		OR	A		;'A' must be > 0
-		RET	Z
+		OR	A		;decsritpor (A) must be > 0 
+		RET	Z		;Если дескриптор 0, то и искать ненадо, значить запись в 0
+		CP	10		;;decsritpor (A) must be < 10 
+		RET	NC
 		PUSH	BC
 		PUSH	DE
-		LD	DE,7
+		LD	DE,14		;Размер одной записи реестра
 		LD	B,A
 rra1		ADD	HL,DE
 		DJNZ	rra1
@@ -787,7 +806,7 @@ recv1		CALL	uart_ts_zifi.read_fifo_byte	;TODO сюда надо прифигач
 ;  : B -  сколько данных в буфере
 proc_rcv	PUSH	HL
 		PUSH	DE
-		LD	DE,msg_ipd	;'+IPD,'
+recv0		LD	DE,msg_ipd	;'+IPD,'
 recv2		PUSH	BC
 		LD	BC,5
 		CALL	check_status_hl
@@ -803,11 +822,12 @@ recv3		LD	A,(HL)
 		POP	HL
 		LD	A,1		;A=1 не принемаем даныне из команды IPD
 		RET
-recv4		LD	DE,5		;Тут уже понимаем что пришла команда +IDP, и за ней идут идентификатор и данные
+recv4		PUSH	HL		;(*1)
+		LD	DE,5		;Тут уже понимаем что пришла команда +IPD, и за ней идут идентификатор и данные
 		ADD	HL,DE
 		LD	A,(HL)
 		SUB	'0'
-		LD	(procrcvdescr),A	;Запоминим идентифиактор пока ХЗ зачем
+		LD	(procrcvdescr),A	;Запоминим идентифиактор
 		INC	HL
 		INC	HL
 		CALL	parcesize		;берем размер данных
@@ -816,12 +836,65 @@ recv4		LD	DE,5		;Тут уже понимаем что пришла команд
 		LD	A,(datasizebuf+1)
 		LD	B,A
 		INC	HL			;Теперь указываем на начало данных
+		PUSH	BC
+		LD	A,(procrcvdescr)	;Вспоминаем десткриптор
 		CALL	putdata			;пишем данные в буфер a=descriptor, bc - length, hl - from bufer
-		POP	DE
+						;*TODO: Добавить определение ситуации когда буфер переполнен и вызывать соотв ф-цию
+		POP	DE			;DE = BC (размер блока данных за IDP)
+		ADD	HL,DE			;Указатель HL на блок за командой IPD
+		POP	DE			;(*1) DE = HL на команде +IPD
+		PUSH	HL
+		SUB	HL,DE
+		EX 	HL,DE	
+		POP	HL			;HL = конец блока а в DE сколько реально байт был блок от команды IPD
+		LD	A,B
+		PUSH	DE
+		POP	BC
+recv5		DEC	A			;Уменьшаем общий счетчик по буферу данных, отматывая размер блока который мы уже обработали
+		DJNZ	recv5
+		LD	B,A
+		JR	recv0			;Если в буфере есть еще данные на обработку
+recv6		POP	DE
 		POP	HL
 		RET
 procrcvdescr	DB	0
 
+mgs_registry	DB	"Registry:",13,0
+dbg_print_descr	PUSH	AF		;Для отладки. Печатаем значение реестра
+		PUSH	BC
+		PUSH	DE
+		PUSH	HL
+		_prints	mgs_registry
+		LD	HL,registry
+		LD	B,9
+dbg0		PUSH	BC
+		LD	B,2
+dbg1		LD 	A,(HL)
+		_a_hex
+		LD	A," "
+		_printc	
+		INC	HL
+		PUSH	BC
+		LD	B,3
+dbg2		LD 	A,(HL)
+		_a_hex
+		INC	HL
+		LD 	A,(HL)
+		_a_hex
+		INC	HL
+		LD	A," "
+		_printc			
+		DJNZ	dbg2
+		POP	BC
+		DJNZ	dbg1
+		_printcrlf
+		POP	BC
+		DJNZ	dbg0
+		POP	HL
+		POP	DE
+		POP	BC
+		POP	AF
+		RET
 ;== Парсинг числа в строке
 ;i: HL - буфер с указателем на начало числа
 ;o: (datasize) - число 4-х байтовое

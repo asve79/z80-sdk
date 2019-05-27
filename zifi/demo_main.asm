@@ -52,37 +52,51 @@ PROG
 		LD A,0						;Бордюр. цвет черный
       		OUT (254),A
 		_cur_off
+
 		;_prints test_data
 		_zifi_init input_bufer
 ;-------------------------------------------------		;Тестирование обработчика данных		
+		_prints t1
+		_prints test_data
+		_prints co1
 		LD	BC,255
 		EXX
 		LD	DE,test_buff
 		EXX
 		CALL	zifi.add_connection			;Добавим соединение 0. Заодно проверим как работает )
 		CALL	zifi.get_id_connection
+		_a_hex
+		_prints co1
 		LD	BC,255
 		EXX
 		LD	DE,test_buff2
 		EXX
 		CALL	zifi.add_connection			;Добавим соединение 1. Заодно проверим как работает )
 		CALL	zifi.get_id_connection
-		CALL	sleep
-		_prints test_data
+		_a_hex
+		_printcrlf
+
+		CALL	zifi.dbg_print_descr
 
 		LD	B,111*2
 		LD	HL,test_data
 		CALL	zifi.proc_rcv
 		CALL	sleep
 		_printcrlf
-		_printcrlf
+
+		_prints	m1
 		_prints	test_buff
-		_printcrlf
+		_prints	m2
 		_prints	test_buff2
+
 		_prints msg_done
 		_cur_on
 TL1		HALT
 		JR	TL1
+t1		DB	13,"Test data:",0
+co1		DB	13,"Connection id:",0
+m1		DB	13,"buf1:",0
+m2		DB	13,"buf2:",0
 msg_done	DB	13,"Done. You can halt system",0
 ;	------------------------------------------
 P1		_prints msg_init
