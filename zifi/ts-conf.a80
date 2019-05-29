@@ -1,14 +1,16 @@
 		module zifi
 
-;Структура реестра (14 байт)
+;Структура реестра (16 байт)
 ;	descriptor[1]	+0	- дескриптор
 ;	bufer_addr[2]	+1	- адрес буфера
 ;	bufer_size[2]	+3	- крайний адрес буфера, до которого можно писать даныне (bufer_addr + размер буфера)
 ;	offset[2]	+5	- адрес первой ячейки буфера куда можно писать данные (bufer_addr+ptr)
 ;(todo) procs_pg[1]	+7	- номер страницы с процедурами
-;(todo) rcv_exec[2]	+8	- адрес процедуры, которая запустится при приходе данных в буфер (on_reveved)
-;(todo) rcv_dis[2]	+10	- адрес процедуры, вызываемой при обрыве соединения (on_disconnect)
-;(todo) over_exec[2]	+12	- адрес процедуры, вызываемой при достижении конца буфера (on_overflow)
+;(todo) procs_bank[1]	+8	- номер банки с процедурами
+;(todo) rcv_exec[2]	+9	- адрес процедуры, которая запустится при приходе данных в буфер (on_reveved)
+;(todo) rcv_dis[2]	+11	- адрес процедуры, вызываемой при обрыве соединения (on_disconnect)
+;(todo) over_exec[2]	+13	- адрес процедуры, вызываемой при достижении конца буфера (on_overflow)
+;(todo) reserved[1]	+15	- аreserved
 
 pCMOS_ADDR	EQU	#DFF7
 pCMOS_DATA	EQU	#BFF7
@@ -163,7 +165,7 @@ msg_ready	DB	10,'ready',13,10
 msg_send_ok	DB	10,'SEND OK',13,10
 ptr		DW	0		;указатель
 connections	DB	0		;счетчик соединений
-registry	DS	10*14,0	;реестр соединений 
+registry	DS	10*16,0	;реестр соединений 
 ;-------------------------------------------------------------------------------
 ;- Взять значение секунд (для отслеживания таймаутов)
 ;o: a - seconds
@@ -206,12 +208,17 @@ send_cmd	LD	A,(HL)
 ; A=0 - OK
 ; A=1 - ERROR
 init		PUSH	HL
+		XOR	A
+		LD	(datasizebuf+0),A	;Обнулить значения показателся сколько байт нужно загрузить в буфер
+		LD	(datasizebuf+1),A
+		LD	(datasizebuf+2),A
+		LD	(datasizebuf+3),A
 		LD	A,10
 		LD	(timeout),A
 		LD	HL,registry
 		LD	(HL),#FF
 		LD	DE,registry+1
-		LD	BC,10*14-1		;возможно 10 (0-9) соединений
+		LD	BC,10*16-1		;возможно 10 (0-9) соединений
 		LDIR				;Заполнить реестр символами #FF
 		CALL	uart_ts_zifi.init
 		OR	A
@@ -556,7 +563,7 @@ add_connection
 		PUSH	HL
 		PUSH	DE
 		PUSH	BC
-		LD	DE,14		;размер буфера
+		LD	DE,16		;размер буфера
 		LD	B,0		;счетчик
 		LD	HL,registry
 a_conn1		LD	A,(HL)
@@ -602,7 +609,7 @@ get_id_connection
 		PUSH	HL
 		LD	HL,registry
 		LD	B,0
-		LD	DE,14		;размер служебной стукрутны в байтах пока get_id_connection
+		LD	DE,16		;размер служебной стукрутны в байтах пока get_id_connection
 gic1		LD	A,(HL)
 		CP	#FF		;искать первый свободный слот (отмечен FF)
 		JR	Z,gic3
@@ -771,7 +778,7 @@ retreqaddr	LD	HL,registry
 		RET	NC
 		PUSH	BC
 		PUSH	DE
-		LD	DE,14		;Размер одной записи реестра
+		LD	DE,16		;Размер одной записи реестра
 		LD	B,A
 rra1		ADD	HL,DE
 		DJNZ	rra1
@@ -804,39 +811,54 @@ recv1		CALL	uart_ts_zifi.read_fifo_byte	;TODO сюда надо прифигач
 ;-- Проанализировать буфер, чего ж там пришло. Раскидать данные по буферам -----
 ;i : HL - буфер (временно, до отладки менеджера потоков)
 ;  : B -  сколько данных в буфере
+;  ! Если в указателе размера данных значения не 0, то считаем что данне долетают и искать IPD ненадо
+;  ! Это возможно в ситуациях когда в предыдущем буфере пришли не все данные из блока команды IPD. Т е в кущущем надо продолжить дозагрузку.
 proc_rcv	PUSH	HL
 		PUSH	DE
-recv0		LD	DE,msg_ipd	;'+IPD,'
+		LD	A,(datasizebuf+0)	;Если предыдущий блок был не полным (неуместился в UART буфере), то считаем что это его долет
+		OR	A			;и мы не ищем команду IPD, а продолжаем грузить данные в буфер
+		JR	NZ,recv_ep
+		LD	A,(datasizebuf+1)	;тоже про блок
+		OR	A
+		JR	NZ,recv_ep
+recv0		LD	DE,msg_ipd		;'+IPD,'
 recv2		PUSH	BC
 		LD	BC,5
-		CALL	check_status_hl
+		CALL	check_status_hl		;TODO: Проверять что до конца буфера не меньше 5 байт. Надо тогда выходить и оставлять эту часть для повторной проверки
 		POP	BC
 		OR	A
-		JR	NZ,recv4	;Если это +IPD, продолжим разбор
+		JR	NZ,recv4		;Если это +IPD, продолжим разбор
 recv3		LD	A,(HL)
 		INC	HL
-		CP	10		;ищем код 10, за которым можно уже проверять наличие команды +IPD
+		CP	10			;ищем код 10, за которым можно уже проверять наличие команды +IPD
 		JR	Z,recv2
-		DJNZ	recv3	;TODO еще надо проверять на строку 'N,DISCONNECT' на предмет потери соединения
-		POP	DE		;если так ничего и не нашли (?)
+		DJNZ	recv3			;TODO еще надо проверять на строку 'N,DISCONNECT' на предмет потери соединения
+		POP	DE			;если так ничего и не нашли (?)
 		POP	HL
-		LD	A,1		;A=1 не принемаем даныне из команды IPD
+		LD	A,1			;A=1 не принемаем даныне из команды IPD
 		RET
-recv4		PUSH	HL		;(*1)
-		LD	DE,5		;Тут уже понимаем что пришла команда +IPD, и за ней идут идентификатор и данные
-		ADD	HL,DE
+recv4		PUSH	HL			;(*1)
+		LD	DE,5			;Тут уже понимаем что пришла команда +IPD, и за ней идут идентификатор и данные
+		ADD	HL,DE			;TODO: Также прверять что буфер резко не кончится. По-хорошему надо понимать что если встретили IPD, и символов 10, то лучше уж подождать прихода новых данных
 		LD	A,(HL)
 		SUB	'0'
 		LD	(procrcvdescr),A	;Запоминим идентифиактор
 		INC	HL
 		INC	HL
-		CALL	parcesize		;берем размер данных
+		DEC	B
+		DEC	B
+		CALL	parcesize		;берем размер данных (Увеличивается указатель HL, уменьшается счетчик B)
+recv_ep		PUSH	BC
+		EXX
+		POP	BC
+		EXX				;BC` = BC для ведения общего счетчика буфера
 		LD	A,(datasizebuf+0)
 		LD	C,A
 		LD	A,(datasizebuf+1)
 		LD	B,A
 		INC	HL			;Теперь указываем на начало данных
 		PUSH	BC
+						;TODO: Определить сколько данных в текущем блоке с UART-а. Если меньше, подготовиться
 		LD	A,(procrcvdescr)	;Вспоминаем десткриптор
 		CALL	putdata			;пишем данные в буфер a=descriptor, bc - length, hl - from bufer
 						;*TODO: Добавить определение ситуации когда буфер переполнен и вызывать соотв ф-цию
@@ -875,7 +897,15 @@ dbg1		LD 	A,(HL)
 		_printc	
 		INC	HL
 		PUSH	BC
+		LD	A,B
+		CP	1
+		JR	NZ,dbg2		;Если это блок 2 и надо допечатать дополнительный байт
+		LD	A,(HL)
+		_a_hex
+		LD	A," "
+		_printc	
 		LD	B,3
+		INC	HL
 dbg2		LD 	A,(HL)
 		_a_hex
 		INC	HL
@@ -889,16 +919,20 @@ dbg2		LD 	A,(HL)
 		DJNZ	dbg1
 		_printcrlf
 		POP	BC
+		INC	HL	;пропустить RESERVED
 		DJNZ	dbg0
 		POP	HL
 		POP	DE
 		POP	BC
 		POP	AF
 		RET
-;== Парсинг числа в строке
+
+;== Парсинг числа в строке ==
 ;i: HL - буфер с указателем на начало числа
+;   B - возможно счетчик чего-то. Он будет уменьшаться. Полезно если ползем по буферу, когда знаем сколько цифр проползли.
 ;o: (datasize) - число 4-х байтовое
 ;   HL - указатель на след символ после числа
+;   B - уменьшим на кол-во обработанных байт
 parcesize	PUSH	AF
 		PUSH	BC
 		XOR	A
@@ -911,6 +945,7 @@ parcesize	PUSH	AF
 		JR	C,7f			;значит число кончилось, выход
 		CP	'9'+1			;Если A > code('9'+1)
 		JR	NC,7f			;значит число кончилось, выход
+		DEC	B			;Уменьшаем B
 		PUSH	HL
 		SUB	'0'
 
