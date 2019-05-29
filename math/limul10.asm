@@ -4,35 +4,35 @@ limul10		; умножение 32-битного беззнакового чис�
 ; 	  	  hl = low word of long
 
 ; x2
-		push	af
-		push	bc
-		add		hl,hl
-		ld		b,h
-		ld		c,l
-		push	de
-		exx
-		pop		hl
-		adc		hl,hl
-		ld		b,h
-		ld		c,l
-		exx
+		PUSH		AF
+		PUSH		BC
+		ADD		HL,HL
+		LD		B,H
+		LD		C,L
+		PUSH		DE
+		EXX
+		POP		HL
+		ADC		HL,HL
+		LD		B,H
+		LD		C,L
+		EXX
 ; x4
-		add		hl,hl
-		exx
-		adc		hl,hl
-		exx
+		ADD		HL,HL
+		EXX
+		ADC		HL,HL
+		EXX
 ; x8
-		add		hl,hl
-		exx
-		adc		hl,hl
-		exx
+		ADD		HL,HL
+		EXX
+		ADC		HL,HL
+		EXX
 ; x10
-		add		hl,bc
-		exx
-		adc		hl,bc
-		push	hl
-		exx
-		pop 	de
-		pop		bc
-		pop		af
-		ret
+		ADD		HL,BC
+		EXX
+		ADC		HL,BC
+		PUSH		HL
+		EXX
+		POP 		DE
+		POP		BC
+		POP		AF
+		RET
